@@ -8,6 +8,7 @@ __author__ = 'egor'
 
 
 TokenRecord = namedtuple('TokenRecord', 'word, lemma, gram')
+#паттерн токена для корпуса со снятой омонимией
 token_pattern = ur'^(?P<token_name>.*?)\t(?P<token_lemma>.*?)=(?P<token_gram>.*)$'
 
 def parse_token(line):
@@ -41,3 +42,13 @@ class NaiveAlgorithm(object):
         if token.word in self.corpus_dict:
             return self.corpus_dict[token.word][token.lemma][token.gram]
         return 0
+
+    def remove_ambiguity(self, variants):
+        #на вход приходит
+        max_variant_val = -1
+        max_variant = None
+        for variant in variants:
+            val = self.corpus_dict[variant.word][variant.lemma][variant.gram]
+            if val > max_variant_val:
+                max_variant = variant
+        return max_variant

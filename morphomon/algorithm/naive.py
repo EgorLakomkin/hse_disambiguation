@@ -37,6 +37,10 @@ class NaiveAlgorithm(object):
             else:
                 self.corpus_dict[token.word][token.lemma][token.gram] += 1
 
+    def find_ambiguity_words(self):
+        for word in self.corpus_dict:
+            if len( self.corpus_dict[word] ) > 1:
+                print "ambiguity word %s" % ( word )
 
     def get_token_freq(self, token):
         if token.word in self.corpus_dict:

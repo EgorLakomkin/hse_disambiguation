@@ -16,7 +16,7 @@ for line in f1:
     else:
         brev = 0
     if m != None:
-        stroka_new = m.group(1)+'\t'+m.group(2)+'='+m.group(3)+','+m.group(4)+'\r\n'
+        stroka_new = m.group(1)+'\t'+m.group(2)+'='+m.group(3)+','+m.group(4)+'\n'
         f2.write(stroka_new)
         
 f1.close()

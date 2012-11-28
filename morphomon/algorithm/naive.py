@@ -20,6 +20,7 @@ def get_tokens(corpus_file):
     corpus =  codecs.open( corpus_file, 'r', 'utf-8' )
     data = corpus.read().split('\n')
     for token in data:
+        token = token.strip()
         if len(token) > 0:
             yield parse_token(token)
 

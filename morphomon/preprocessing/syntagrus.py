@@ -6,7 +6,7 @@ def get_token_str_rep(el):
     gram = el.attrib["feat"]
     lemma = el.attrib["lemma"]
     word_form = el.text
-    lemma_str = u"{0}={1}".format( lemma, ','.join(gram.split(' ')) )
+    lemma_str = u"{0}={1}".format( lemma, ','.join(gram.split(' ') ) )
     result_str = u"{0}\t{1}\r\n".format(word_form,lemma_str)
     return result_str
 

@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
-from morphomon.algorithm.naive import NaiveAlgorithm, TokenRecord
+from morphomon.algorithm.naive import NaiveAlgorithm
+from morphomon.utils import TokenRecord
 
 __author__ = 'egor'
 import settings

@@ -1,34 +1,37 @@
 # -*- coding: utf-8 -*-
-from morphomon.algorithm.naive import get_tokens
+from morphomon.utils import get_tokens, get_ending
 import settings
 
-def get_ending(word):
-    ending = word[-3:]
-    return ending
 
-def calculate_A(corpus_file):
+
+def calculate_B(corpus_file):
     tokens = get_tokens(corpus_file)
 
-    A_matrix = {}
+    B_matrix = {}
     #ключ - окончание слова, значение - словарь с грамматическими формамими : грам.форма => кол-во раз встреч в корпусе
 
     for token in tokens:
         word_form = token.word
         gram = token.gram
         ending = get_ending(word_form)
-        if ending not in A_matrix:
-            A_matrix[ending] = {}
+        if ending not in B_matrix:
+            B_matrix[ending] = {}
 
-        if gram not in A_matrix[ending]:
-            A_matrix[ending][gram] = 1
+        if gram not in B_matrix[ending]:
+            B_matrix[ending][gram] = 1
         else:
-            A_matrix[ending][gram] += 1
+            B_matrix[ending][gram] += 1
 
-    return A_matrix
+    return B_matrix
 
 
 
-A_matrix = calculate_A(corpus_file = settings.CORPUS_DATA_ROOT + 'processed_anketa.txt')
-for key in A_matrix:
-    for gram_form in A_matrix[key]:
-        print "Окончание",key,"грам форма", gram_form,A_matrix[key][gram_form]
+B_matrix = calculate_B(corpus_file = settings.CORPUS_DATA_ROOT + 'processed_anketa.txt')
+gram_pr = set()
+for key in B_matrix:
+    for gram_form in B_matrix[key]:
+        gram_pr.add(gram_form)
+        print "Окончание",key,"грам форма", gram_form,B_matrix[key][gram_form]
+
+print "Размерность множества окончаний", len(B_matrix)
+print "Размерность множества грам. признаков", len(gram_pr)

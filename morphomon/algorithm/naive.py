@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from morphomon.utils import get_tokens
+from morphomon.utils import get_tokens_from_corpora
 
 
 __author__ = 'egor'
@@ -12,7 +12,7 @@ class NaiveAlgorithm(object):
     #реализация наивного алгоритма
     def __init__(self, corpus_file):
         self.corpus_dict = {}
-        for token in get_tokens( corpus_file ):
+        for token in get_tokens_from_corpora( corpus_file ):
             if token.word not in self.corpus_dict:
                 self.corpus_dict[token.word] = {}
             if token.lemma not in self.corpus_dict[token.word]:

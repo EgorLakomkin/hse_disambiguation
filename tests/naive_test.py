@@ -1,8 +1,7 @@
 # -*- coding: utf-8 -*-
+__author__ = 'egor'
 from morphomon.algorithm.naive import NaiveAlgorithm
 from morphomon.utils import TokenRecord
-
-__author__ = 'egor'
 import settings
 
 naive_algo = NaiveAlgorithm(corpus_file = settings.CORPUS_DATA_ROOT + 'processed_opencorpora.txt')

@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
-from morphomon.utils import get_tokens, get_ending
+from morphomon.utils import get_tokens_from_corpora, get_word_ending
 import settings
 
 
 
 def calculate_B(corpus_file):
-    tokens = get_tokens(corpus_file)
+    tokens = get_tokens_from_corpora(corpus_file)
 
     B_matrix = {}
     #ключ - окончание слова, значение - словарь с грамматическими формамими : грам.форма => кол-во раз встреч в корпусе
@@ -13,7 +13,7 @@ def calculate_B(corpus_file):
     for token in tokens:
         word_form = token.word
         gram = token.gram
-        ending = get_ending(word_form)
+        ending = get_word_ending(word_form,enging_length=4)
         if ending not in B_matrix:
             B_matrix[ending] = {}
 

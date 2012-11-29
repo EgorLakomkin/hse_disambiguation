@@ -4,8 +4,8 @@ from collections import namedtuple
 import re
 
 
-def get_ending(word):
-    ending = word[-3:]
+def get_word_ending(word, enging_length = 3):
+    ending = word[-enging_length:]
     return ending
 
 TokenRecord = namedtuple('TokenRecord', 'word, lemma, gram')
@@ -17,7 +17,7 @@ def parse_token(line):
     return TokenRecord(word = match.group('token_name'), lemma = match.group('token_lemma'),
         gram = match.group('token_gram'))
 
-def get_tokens(corpus_file):
+def get_tokens_from_corpora(corpus_file):
     corpus =  codecs.open( corpus_file, 'r', 'utf-8' )
     data = corpus.read().split('\n')
     for token in data:

@@ -37,7 +37,10 @@ class NaiveAlgorithm(object):
         max_variant_val = -1
         max_variant = None
         for variant in variants:
-            val = self.corpus_dict[variant.word][variant.lemma][variant.gram]
-            if val > max_variant_val:
-                max_variant = variant
+            if variant.word in self.corpus_dict:
+                if variant.lemma in self.corpus_dict[variant.word]:
+                    if variant.gram in self.corpus_dict[variant.word][variant.lemma]:
+                        val = self.corpus_dict[variant.word][variant.lemma][variant.gram]
+                        if val > max_variant_val:
+                            max_variant = variant
         return max_variant

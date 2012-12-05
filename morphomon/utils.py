@@ -14,9 +14,9 @@ token_pattern = ur'^(?P<token_name>.*?)\t(?P<token_lemma>.*?)=(?P<token_gram>.*)
 
 def parse_token(line):
     tokens = []
-    m = re.search(u'([А-яЁё]+)\t', line)
+    m = re.search(u'(.*)\t', line)
     if m != None:
-        m1 = re.findall(u'([А-яЁё-]+)=([A-z0123,А-яЁё]+)\t?', line)
+        m1 = re.findall(u'(.*)=(.*)\t?', line)
         if m1 != None:
             for i in m1:
                 x = TokenRecord(word = m.group(1), lemma = i[0], gram = i[1])
@@ -32,7 +32,4 @@ def get_tokens_from_corpora(corpus_file):
             #выкидываем токен EOS
             yield [TokenRecord(word='\n', lemma='\n', gram = 'EOS')]
         else:
-            parsed_token = parse_token(token)
-            if len(parsed_token) == 0:
-                print "re"
-            yield  parsed_token
+            yield  parse_token(token)

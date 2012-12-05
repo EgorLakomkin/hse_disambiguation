@@ -23,12 +23,16 @@ def calculate_A(corpus_file):
         token = token[0]
 
         gram = token.gram
-        if token.gram !='EOS':
+        if token.gram !='EOS' and prev_token:
             A[prev_token.gram][gram] += 1
+            prev_token = token
         else:
-            p[gram] +=1
+            if token.gram !='EOS':
+                p[gram] +=1
+                prev_token = token
 
-        prev_token = token
+
+
 
     #преобразование вероятности в логарифм
     #lop p = log (k / n) = log k - log n

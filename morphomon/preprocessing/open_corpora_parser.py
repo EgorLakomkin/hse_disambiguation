@@ -47,7 +47,7 @@ def process_open_corpora_file( file, outfile ):
         except Exception as e:
             raise Exception("Dom parsing exception %s" % (e))
 
+if __name__=="__main__":
+    import settings
 
-import settings
-
-process_open_corpora_file( settings.CORPUS_DATA_ROOT + 'annot.opcorpora.no_ambig.xml', settings.CORPUS_DATA_ROOT + 'processed_opencorpora.txt' )
+    process_open_corpora_file( settings.CORPUS_DATA_ROOT + 'annot.opcorpora.no_ambig.xml', settings.CORPUS_DATA_ROOT + 'processed_opencorpora.txt' )

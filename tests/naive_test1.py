@@ -7,10 +7,10 @@ import codecs, re
 __author__ = 'egor'
 #import settings
 
-f_raw = 'fiction_mystem.txt'
+f_raw = '/home/umka/Dropbox/hse_disabmig/data/mystem/txt/fiction_mystem.txt'
 f_disamb = codecs.open('test_naive.txt', 'w', 'utf-8')
 
-naive_algo = NaiveAlgorithm(corpus_file = 'processed_fiction.txt')
+naive_algo = NaiveAlgorithm(corpus_file = '/home/umka/Dropbox/hse_disabmig/data/processed/processed_fiction.txt')
 
 def parse_token(line):
     tokens = []

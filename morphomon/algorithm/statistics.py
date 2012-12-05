@@ -16,8 +16,14 @@ def calculate_A(corpus_file):
     p = defaultdict(float)
     prev_token = None
     for token in tokens:
+
+        if len(token) > 1:
+            raise Exception("You cannot train on corpus with ambiguity")
+
+        token = token[0]
+
         gram = token.gram
-        if prev_token:
+        if token.gram !='EOS':
             A[prev_token.gram][gram] += 1
         else:
             p[gram] +=1
@@ -47,10 +53,17 @@ def calculate_B(corpus_file):
     #ключ - окончание слова, значение - словарь с грамматическими формамими : грам.форма => кол-во раз встреч в корпусе
 
     for token in tokens:
+
+        if len(token) > 1:
+            raise Exception("You cannot train on corpus with ambiguity")
+
+        token = token[0]
+
         word_form = token.word
         gram = token.gram
-        ending = get_word_ending(word_form,enging_length=4)
-        B[gram][ending] += 1
+        if gram != 'EOS':
+            ending = get_word_ending(word_form,enging_length=4)
+            B[gram][ending] += 1
 
     #преобразование вероятности в логарифм
     #lop p = log (k / n) = log k - log n
@@ -62,8 +75,8 @@ def calculate_B(corpus_file):
 
 
 if __name__=="__main__":
-    B_matrix = calculate_B(corpus_file = settings.CORPUS_DATA_ROOT + 'processed_anketa.txt')
-    A_matrix,p = calculate_A(corpus_file = settings.CORPUS_DATA_ROOT + 'processed_anketa.txt')
+    B_matrix = calculate_B(corpus_file = settings.CORPUS_DATA_ROOT + 'processed_opencorpora.txt')
+    A_matrix,p = calculate_A(corpus_file = settings.CORPUS_DATA_ROOT + 'processed_opencorpora.txt')
 
     gram_pr = set()
     for key in B_matrix:

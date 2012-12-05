@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from collections import defaultdict
+from math import log
 from morphomon.utils import get_tokens_from_corpora, get_word_ending
 import settings
 
@@ -22,6 +23,18 @@ def calculate_A(corpus_file):
             p[gram] +=1
 
         prev_token = token
+
+    #преобразование вероятности в логарифм
+    #lop p = log (k / n) = log k - log n
+    for prev_token in A:
+        log_n = log(sum([A[prev_token][next_token] for next_token in A[prev_token]]))
+        for next_token in A[prev_token]:
+            A[prev_token][next_token] = log(A[prev_token][next_token]) - log_n
+    #преобразуем вероятности начального распределения
+    log_n_p = log(sum([p[gram] for gram in p]))
+    for gram in p:
+        p[gram] = log(p[gram]) - log_n_p
+
     return A,p
 
 def calculate_B(corpus_file):
@@ -39,6 +52,12 @@ def calculate_B(corpus_file):
         ending = get_word_ending(word_form,enging_length=4)
         B[gram][ending] += 1
 
+    #преобразование вероятности в логарифм
+    #lop p = log (k / n) = log k - log n
+    for gram in B:
+        log_n = log(sum([B[gram][ending] for ending in B[gram]]))
+        for ending in B[gram]:
+            B[gram][ending] = log(B[gram][ending]) - log_n
     return B
 
 

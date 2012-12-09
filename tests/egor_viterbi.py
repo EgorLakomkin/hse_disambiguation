@@ -89,13 +89,15 @@ def get_viterbi_path(x, X, Y, A, B, p):
             last_state = key
 
     it_state = last_state
+    path.append(last_state)
     #проходим с конца и записываем в путь предыдущие состояния
     for index in reversed(range(1,len(x))):
         path.append( backtrace[index][it_state] )
         it_state = backtrace[index][it_state]
-    path.append(last_state)
-    return path # Посчитать max_y P(y|x)
+
+
+    return path[::-1] # Посчитать max_y P(y|x)
 
 if __name__ == "__main__":
     print get_viterbi_probability([1,0,0,1,1,0],X,Y,A,B,p)
-    print get_viterbi_path([1,0,0,1,1,0],X,Y,A,B,p)
+    print get_viterbi_path([1,0,1,0],X,Y,A,B,p)

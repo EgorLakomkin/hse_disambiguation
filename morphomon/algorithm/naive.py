@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
+__author__ = 'egor'
 from morphomon.utils import get_tokens_from_corpora
 
 
-__author__ = 'egor'
+
 
 
 

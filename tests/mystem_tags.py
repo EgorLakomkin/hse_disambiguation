@@ -1,6 +1,9 @@
 # -*- coding: utf-8 -*-
-from morphomon.utils import get_corpus_gram_tags
+from morphomon.utils import get_corpus_gram_tags, get_tokens_from_corpora
 
+def find_word_by_tag(corpus_file, tag):
+    #for token in get_tokens_from_corpora(corpus_file):
+    pass
 
 if __name__ == "__main__":
     test_mystem_file = "/home/umka/Dropbox/hse_disabmig/data/mystem/txt/fiction_mystem.txt"
@@ -10,10 +13,16 @@ if __name__ == "__main__":
 
     #тривиальный препроцессинг
     ruscorpora_gram = set([tag for gram_tag in ruscorpora_gram for tag in gram_tag.split('=')])
+
+    #ruscorpora_gram = set([tag.replace('-','') for tag in ruscorpora_gram])
+
     intersection = set.intersection(mystem_gram,ruscorpora_gram)
 
     mystem_ruscorpora = mystem_gram - ruscorpora_gram
     ruscorpora_mystem = ruscorpora_gram - mystem_gram
+
+
+
     print "Кол-во тегов mystem ", len(mystem_gram)
     print "Кол-во тегов НКРЯ",len(ruscorpora_gram)
     print "Кол-во совпавших тегов",len(intersection)

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from collections import defaultdict
-import operator
+from math import log
 
 Y = set([ 'sun', 'rain' ])
 X = set([ 0, 1 ])
@@ -26,7 +26,7 @@ def get_viterbi_probability(x, X, Y, A, B, p):
 
     all_states = ['start'] + list(Y)
     for state in all_states:
-        phi[-1][state] = 1.0
+        phi[-1][state] = 0.0
         A['start'][state] = p[state]
 
     #проходим все наблюдения
@@ -37,7 +37,7 @@ def get_viterbi_probability(x, X, Y, A, B, p):
             max_prob = float('-inf')
             #находим максимальный путь до состояния Y
             for prev_state in all_states:
-                prob = phi[i-1][prev_state] * A[prev_state][state] * B[state][obs]
+                prob = phi[i-1][prev_state] + A[prev_state][state] + B[state][obs]
                 if prob > max_prob: max_prob = prob
             #записываем max P(x1..xi,y1..i)
             phi[i][state] = max_prob
@@ -56,7 +56,7 @@ def get_viterbi_path(x, X, Y, A, B, p):
 
     all_states = ['start'] + list(Y)
     for state in all_states:
-        phi[-1][state] = 1.0
+        phi[-1][state] = 0.0
         A['start'][state] = p[state]
 
     #проходим все наблюдения
@@ -67,8 +67,8 @@ def get_viterbi_path(x, X, Y, A, B, p):
             max_prob = float('-inf')
             source_state = None
             #находим максимальный путь до состояния Y
-            for prev_state in all_states:
-                prob = phi[i-1][prev_state] * A[prev_state][state] * B[state][obs]
+            for prev_state in Y:
+                prob = phi[i-1][prev_state] + A[prev_state][state] + B[state][obs]
                 if prob > max_prob:
                     max_prob = prob
                     source_state = prev_state
@@ -99,5 +99,19 @@ def get_viterbi_path(x, X, Y, A, B, p):
     return path[::-1] # Посчитать max_y P(y|x)
 
 if __name__ == "__main__":
+
+    for state in p:
+        p[state] = log(p[state])
+
+    #преобразование вероятности в логарифм
+    #lop p = log (k / n) = log k - log n
+    for prev_state in A:
+        for next_state in A[prev_state]:
+            A[prev_state][next_state] = log(A[prev_state][next_state])
+
+    for state in B:
+        for obs in B[state]:
+            B[state][obs] = log(B[state][obs])
+
     print get_viterbi_probability([1,0,0,1,1,0],X,Y,A,B,p)
-    print get_viterbi_path([1,0,1,0],X,Y,A,B,p)
+    print get_viterbi_path([1,0,0,0,0,0,0,0,1],X,Y,A,B,p)

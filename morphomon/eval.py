@@ -9,7 +9,9 @@ __author__ = 'egor'
 
 
 def M_strict_mathcher(algo_token, gold_token ):
-    return 1.0
+    if algo_token.gram == gold_token.gram and algo_token.lemma == gold_token.lemma and algo_token.word == gold_token.word:
+        return 1.0
+    return 0.0
 
 def P_dump_filter(token):
     return 1

@@ -1,4 +1,4 @@
-Не	не=PRCL
+Не	не=PRC
 столь	столь=ADVB
 красиво	красиво=ADVB
 вышло	вышел=VERB,perf,intr,neut,sing,past,indc

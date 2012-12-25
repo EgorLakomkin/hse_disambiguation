@@ -1,14 +1,12 @@
-﻿import codecs
-import lxml.html
-
-
+﻿# -*- coding: utf-8 -*-
+import codecs
 import xml.parsers.expat
-
+#парсер для НКРЯ в наш формат
 #код позаимстован отсюда:
 #https://github.com/irokez/Pyrus/blob/master/src/rnc.py
 class Reader:
     def __init__(self):
-        self._parser = xml.parsers.expat.ParserCreate()
+        self._parser = xml.parsers.expat.ParserCreate('UTF-8')
         self._parser.StartElementHandler = self.start_element
         self._parser.EndElementHandler = self.end_element
         self._parser.CharacterDataHandler = self.char_data
@@ -42,6 +40,27 @@ class Reader:
         self._parser.Parse(content)
 
         return self._sentences
+
+def get_ruscorpora_content( file ):
+    #возврашаем строку в нашем формате
+    try:
+        sentences = Reader().read( file, "cp1251" )
+        return_str = ""
+        for sentence in sentences:
+            for word in sentence:
+                accent = word[0].index('`') + 1 if '`' in word[0] else 0
+                word_form = word[0].replace('`', '')
+                lemma = word[1]['lex']
+                gram = word[1]['gr']
+                lemma_str = u"{0}={1}".format( lemma, ','.join(gram.split(' ') ) )
+                word_form_str = u"{0}\t{1}\r\n".format(word_form,lemma_str)
+                return_str += word_form_str
+            return_str+='\r\n'
+        return_str+='\r\n'
+        return return_str
+
+    except Exception as e:
+        raise Exception("Dom parsing exception %s" % (e))
 
 def process_ruscorpora_file( file, outfile ):
     out_f =  codecs.open( outfile, 'w', 'utf-8' )

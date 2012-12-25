@@ -3,7 +3,7 @@ from collections import defaultdict
 from math import log
 from morphomon.utils import get_tokens_from_corpora, get_word_ending
 import settings
-
+from tests.egor_viterbi import get_viterbi_probability, get_viterbi_path
 
 
 def calculate_A(corpus_file):
@@ -27,12 +27,11 @@ def calculate_A(corpus_file):
             A[prev_token.gram][gram] += 1
             prev_token = token
         else:
-            if token.gram !='EOS':
+            if gram !='EOS' and not prev_token:
                 p[gram] +=1
                 prev_token = token
-
-
-
+            else:
+                prev_token = None
 
     #преобразование вероятности в логарифм
     #lop p = log (k / n) = log k - log n
@@ -40,9 +39,15 @@ def calculate_A(corpus_file):
         log_n = log(sum([A[prev_token][next_token] for next_token in A[prev_token]]))
         for next_token in A[prev_token]:
             A[prev_token][next_token] = log(A[prev_token][next_token]) - log_n
+
+
     #преобразуем вероятности начального распределения
-    log_n_p = log(sum([p[gram] for gram in p]))
-    for gram in p:
+    for gram in A:
+        if gram not in p:
+            p[gram] = 0.000001
+
+    log_n_p = log(sum([p[gram] for gram in A]))
+    for gram in A:
         p[gram] = log(p[gram]) - log_n_p
 
     return A,p
@@ -66,7 +71,7 @@ def calculate_B(corpus_file):
         word_form = token.word
         gram = token.gram
         if gram != 'EOS':
-            ending = get_word_ending(word_form,enging_length=4)
+            ending = get_word_ending(word_form,enging_length=3)
             B[gram][ending] += 1
 
     #преобразование вероятности в логарифм
@@ -79,18 +84,40 @@ def calculate_B(corpus_file):
 
 
 if __name__=="__main__":
-    B_matrix = calculate_B(corpus_file = settings.CORPUS_DATA_ROOT + 'processed_opencorpora.txt')
-    A_matrix,p = calculate_A(corpus_file = settings.CORPUS_DATA_ROOT + 'processed_opencorpora.txt')
-
+    B = calculate_B(corpus_file = "/home/umka/rnc.txt")
+    A,p = calculate_A(corpus_file = "/home/umka/rnc.txt")
+    for initial in p:
+        print initial, p[initial]
     gram_pr = set()
-    for key in B_matrix:
-        for ending in B_matrix[key]:
+    for key in B:
+        for ending in B[key]:
             gram_pr.add(key)
-            print "Окончание",ending,"грам форма", key,B_matrix[key][ending]
 
-    print "Размерность множества окончаний", len(B_matrix)
-    print "Размерность множества грам. признаков", len(gram_pr)
+    for gram in A:
+        for ending in B:
+            if gram not in B[ending]:
+                B[ending][gram] = float('-inf')
 
-    for a_i in A_matrix:
-        for a_j in A_matrix[a_i]:
-            print a_i,a_j, A_matrix[a_i][a_j]
+
+
+    X = set([ending for gram in B for ending in B[gram]])
+
+    Y = set([gram for gram in gram_pr])
+
+    #препроцессинг матрицы A
+    for prev_state in Y:
+        for next_state in Y:
+            if next_state not in A[prev_state]:
+                A[prev_state][next_state] = float('-inf')
+
+    print "Размерность множества окончаний", len(X)
+    print "Размерность множества грам. признаков", len(Y)
+
+    while True:
+        sentence = raw_input("Введите предложение :")
+        sentence = sentence.decode('utf-8')
+        print "Вы ввели : ", sentence
+        sentence_obserable = [get_word_ending(word,enging_length=3) for word in sentence.split(' ')]
+        print "Наблюдаемые состояния : ", ' '.join(sentence_obserable)
+        print ' '.join(get_viterbi_path(sentence_obserable,X,Y,A,B,p))
+        print get_viterbi_probability(sentence_obserable,X,Y,A,B,p)

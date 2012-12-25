@@ -1,13 +1,21 @@
 # -*- coding: utf-8 -*-
 import codecs
 import re
+from morphomon.utils import TokenRecord
+import settings
 
 __author__ = 'egor'
 
 
 
+def M_strict_mathcher(algo_token, gold_token ):
+    return 1.0
 
-def calculate_precision(file_algo_name, file_gold_standart_name):
+def P_dump_filter(token):
+    return 1
+
+
+def calculate_precision(file_algo_name, file_gold_standart_name, M, P):
     """
     Params :
     fila_algo - файл, который получился в результате алгоритма
@@ -25,19 +33,24 @@ def calculate_precision(file_algo_name, file_gold_standart_name):
 
 
     token_pattern = ur'^(?P<token_name>.*?)\t(?P<token_lemma>.*?)=(?P<token_gram>.*)$'
-    correct = 0
+    correct = 0.0
+    max_value = 0.0
     #предполагается, что два файла имеют одинаковый формат и одинаковую длину
     for token_index in range( len( algo_f_tokens ) ):
+
 
         algo_token_info = re.match(token_pattern, algo_f_tokens[token_index] )
         gold_token_info = re.match(token_pattern, gold_f_tokens[token_index] )
 
-        if algo_token_info.group('token_name') == gold_token_info.group('token_name'):
-            if algo_token_info.group('token_lemma') == gold_token_info.group('token_lemma'):
-                #тупое и наивное сравнение грамм признаков
-                #TODO
-                if algo_token_info.group('token_gram') == gold_token_info.group('token_gram'):
-                    correct +=1
+        algo_token_record = TokenRecord(word =algo_token_info.group('token_name'), lemma = algo_token_info.group('token_lemma'), gram = algo_token_info.group('token_gram') )
 
+        gold_token_record = TokenRecord(word =gold_token_info.group('token_name'), lemma = gold_token_info.group('token_lemma'), gram = gold_token_info.group('token_gram') )
 
-    return float(correct) / len(algo_f_tokens)
+        if P(gold_token_record) > 0:
+            correct += M(algo_token_record,gold_token_record)
+            max_value += 1.0
+
+    return float(correct) / max_value
+
+if __name__=="__main__":
+    print calculate_precision(settings.CORPUS_DATA_ROOT + 'processed_opencorpora.txt', settings.CORPUS_DATA_ROOT + 'processed_opencorpora_test.txt', M = M_strict_mathcher, P = P_dump_filter )

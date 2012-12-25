@@ -114,4 +114,4 @@ if __name__ == "__main__":
             B[state][obs] = log(B[state][obs])
 
     print get_viterbi_probability([1,0,0,1,1,0],X,Y,A,B,p)
-    print get_viterbi_path([1,0,0,0,0,0,0,0,1],X,Y,A,B,p)
+    print ([1,0,0,0,0,0,0,0,1],X,Y,A,B,p)

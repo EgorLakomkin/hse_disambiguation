@@ -1,7 +1,10 @@
 ﻿import codecs, re, os
 from subprocess import Popen
+from morphomon.utils import get_corpus_files
 
 corpora = ['processed_anketa.txt', 'processed_opencorpora.txt', 'processed_fiction.txt']
+
+
 for i in corpora:
     f = codecs.open(i, 'r', 'utf-8')
     fOut = codecs.open('./lemmer/texts/clean/' + i[10:], 'w', 'utf-8')

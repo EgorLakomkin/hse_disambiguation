@@ -35,9 +35,16 @@ def get_corpus_gram_tags(corpus_file):
                 gram_set.add(token_gram)
     return gram_set
 
-def get_corpus_files(corpus_path):
-    lst = [os.path.join(corpus_path,filename) for filename in os.listdir(corpus_path)]
-    return lst
+def get_corpus_files(corpus_path, pattern="*.xhtml"):
+    import os
+    from glob import glob
+
+    files = []
+    start_dir = corpus_path
+
+    for dir,_,_ in os.walk(start_dir):
+        files.extend(glob(os.path.join(dir,pattern)))
+    return files
 
 def get_tokens_from_corpora(corpus_file):
     corpus =  codecs.open( corpus_file, 'r', 'utf-8' )

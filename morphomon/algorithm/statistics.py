@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from collections import defaultdict
 from math import log
-from morphomon.utils import get_tokens_from_corpora, get_word_ending
+from morphomon.utils import get_tokens_from_corpora, get_word_ending, EOS_TOKEN
 import settings
 
 
@@ -12,9 +12,9 @@ def calculate_A(corpus_file):
     """
     tokens = get_tokens_from_corpora(corpus_file)
 
-    A = defaultdict(lambda: defaultdict(float))
+    A = defaultdict(lambda: defaultdict(lambda : float('-inf')))
     p = defaultdict(float)
-    prev_token = None
+    prev_token = EOS_TOKEN
     for token in tokens:
 
         if len(token) > 1:
@@ -23,13 +23,12 @@ def calculate_A(corpus_file):
         token = token[0]
 
         gram = token.gram
-        if token.gram !='EOS' and prev_token:
+
+        if token.gram !=EOS_TOKEN:
             A[prev_token.gram][gram] += 1
-            prev_token = token
         else:
-            if token.gram !='EOS':
-                p[gram] +=1
-                prev_token = token
+            p[gram] +=1
+        prev_token = token
 
 
 
@@ -37,7 +36,7 @@ def calculate_A(corpus_file):
     #преобразование вероятности в логарифм
     #lop p = log (k / n) = log k - log n
     for prev_token in A:
-        log_n = log(sum([A[prev_token][next_token] for next_token in A[prev_token]]))
+        log_n = log(sum([A[prev_token][next_token] for next_token in A[prev_token] if A[prev_token][next_token] > 0]))
         for next_token in A[prev_token]:
             A[prev_token][next_token] = log(A[prev_token][next_token]) - log_n
     #преобразуем вероятности начального распределения
@@ -53,7 +52,7 @@ def calculate_B(corpus_file):
     """
     tokens = get_tokens_from_corpora(corpus_file)
 
-    B = defaultdict(lambda: defaultdict(float))
+    B = defaultdict(lambda: defaultdict(lambda : float('-inf')))
     #ключ - окончание слова, значение - словарь с грамматическими формамими : грам.форма => кол-во раз встреч в корпусе
 
     for token in tokens:
@@ -72,15 +71,15 @@ def calculate_B(corpus_file):
     #преобразование вероятности в логарифм
     #lop p = log (k / n) = log k - log n
     for gram in B:
-        log_n = log(sum([B[gram][ending] for ending in B[gram]]))
+        log_n = log(sum([B[gram][ending] for ending in B[gram] if B[gram][ending]>0]))
         for ending in B[gram]:
             B[gram][ending] = log(B[gram][ending]) - log_n
     return B
 
 
 if __name__=="__main__":
-    B_matrix = calculate_B(corpus_file = settings.CORPUS_DATA_ROOT + 'processed_opencorpora.txt')
-    A_matrix,p = calculate_A(corpus_file = settings.CORPUS_DATA_ROOT + 'processed_opencorpora.txt')
+    B_matrix = calculate_B(corpus_file = settings.CORPUS_DATA_ROOT + 'processed_anketa.txt')
+    A_matrix,p = calculate_A(corpus_file = settings.CORPUS_DATA_ROOT + 'processed_anketa.txt')
 
     gram_pr = set()
     for key in B_matrix:

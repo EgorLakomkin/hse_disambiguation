@@ -13,6 +13,8 @@ TokenRecord = namedtuple('TokenRecord', 'word, lemma, gram')
 #паттерн токена для корпуса со снятой омонимией
 token_pattern = ur'^(?P<token_name>.*?)\t(?P<token_lemma>.*?)=(?P<token_gram>.*)$'
 
+EOS_TOKEN = TokenRecord(word='',lemma='',gram='EOS')
+
 def parse_token(line):
     tokens = []
     m = re.search(u'(.*?)\t', line)

@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 from collections import defaultdict
 from math import log
-from morphomon.utils import get_tokens_from_corpora, get_word_ending
+from morphomon.utils import get_tokens_from_corpora, get_word_ending, EOS_TOKEN
 import settings
-
+from tests.egor_viterbi import get_viterbi_path, get_viterbi_probability
 
 
 def calculate_A(corpus_file):
@@ -14,7 +14,7 @@ def calculate_A(corpus_file):
 
     A = defaultdict(lambda: defaultdict(float))
     p = defaultdict(float)
-    prev_token = None
+    prev_token = EOS_TOKEN
     for token in tokens:
 
         if len(token) > 1:
@@ -22,14 +22,18 @@ def calculate_A(corpus_file):
 
         token = token[0]
 
-        gram = token.gram
-        if token.gram !='EOS' and prev_token:
-            A[prev_token.gram][gram] += 1
+        if token.gram == EOS_TOKEN.gram:
             prev_token = token
+            continue
+
+        gram = token.gram
+
+        if prev_token.gram != EOS_TOKEN.gram:
+            A[prev_token.gram][gram] += 1
         else:
-            if token.gram !='EOS':
-                p[gram] +=1
-                prev_token = token
+            p[gram] +=1
+
+        prev_token = token
 
 
 
@@ -45,6 +49,11 @@ def calculate_A(corpus_file):
     for gram in p:
         p[gram] = log(p[gram]) - log_n_p
 
+    for prev_token in A:
+        A[prev_token].default_factory = lambda : float('-10000')
+
+    A.default_factory = lambda: defaultdict(lambda : float('-10000'))
+    p.default_factory = lambda : float('-10000')
     return A,p
 
 def calculate_B(corpus_file):
@@ -65,8 +74,8 @@ def calculate_B(corpus_file):
 
         word_form = token.word
         gram = token.gram
-        if gram != 'EOS':
-            ending = get_word_ending(word_form,enging_length=4)
+        if token.gram != EOS_TOKEN.gram:
+            ending = get_word_ending(word_form,enging_length=3)
             B[gram][ending] += 1
 
     #преобразование вероятности в логарифм
@@ -75,22 +84,38 @@ def calculate_B(corpus_file):
         log_n = log(sum([B[gram][ending] for ending in B[gram]]))
         for ending in B[gram]:
             B[gram][ending] = log(B[gram][ending]) - log_n
+
+    for gram in B:
+        B[gram].default_factory = lambda : float('-10000')
+
+    B.default_factory = lambda: defaultdict(lambda : float('-10000'))
     return B
 
 
 if __name__=="__main__":
-    B_matrix = calculate_B(corpus_file = settings.CORPUS_DATA_ROOT + 'processed_opencorpora.txt')
-    A_matrix,p = calculate_A(corpus_file = settings.CORPUS_DATA_ROOT + 'processed_opencorpora.txt')
+    B = calculate_B(corpus_file = settings.CORPUS_DATA_ROOT + 'processed_anketa.txt')
+    A,p = calculate_A(corpus_file = settings.CORPUS_DATA_ROOT + 'processed_anketa.txt')
+
 
     gram_pr = set()
-    for key in B_matrix:
-        for ending in B_matrix[key]:
+    for key in B:
+        for ending in B[key]:
             gram_pr.add(key)
-            print "Окончание",ending,"грам форма", key,B_matrix[key][ending]
 
-    print "Размерность множества окончаний", len(B_matrix)
-    print "Размерность множества грам. признаков", len(gram_pr)
 
-    for a_i in A_matrix:
-        for a_j in A_matrix[a_i]:
-            print a_i,a_j, A_matrix[a_i][a_j]
+    X = set([ending for gram in B for ending in B[gram]])
+
+    Y = set([gram for gram in gram_pr])
+
+
+    print "Размерность множества окончаний", len(X)
+    print "Размерность множества грам. признаков", len(Y)
+
+    while True:
+        sentence = raw_input("Введите предложение :")
+        sentence = sentence.decode('utf-8')
+        print "Вы ввели : ", sentence
+        sentence_obserable = [get_word_ending(word,enging_length=3) for word in sentence.split(' ')]
+        print "Наблюдаемые состояния : ", ' '.join(sentence_obserable)
+        print ' '.join(get_viterbi_path(sentence_obserable,X,Y,A,B,p))
+        print get_viterbi_probability(sentence_obserable,X,Y,A,B,p)

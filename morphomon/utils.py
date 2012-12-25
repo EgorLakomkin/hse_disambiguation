@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import codecs
 from collections import namedtuple
-import os
+import pickle
 import re
 
 
@@ -56,3 +56,15 @@ def get_tokens_from_corpora(corpus_file):
             yield [TokenRecord(word='\n', lemma='\n', gram = 'EOS')]
         else:
             yield  parse_token(token)
+
+
+def dump_object(filename, object):
+    file = open(filename,'wb')
+    pickle.dump(object, file)
+    file.close()
+
+def load_object(filename):
+    file = open(filename,'rb')
+    obj = pickle.load(file)
+    file.close()
+    return obj

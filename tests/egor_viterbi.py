@@ -18,6 +18,8 @@ p = defaultdict(float)
 p['sun'] = 0.5
 p['rain'] = 0.5
 
+
+
 def get_viterbi_probability(x, X, Y, A, B, p):
     #X - наблюдаемые события
     #Y - внутренние состояния
@@ -42,7 +44,11 @@ def get_viterbi_probability(x, X, Y, A, B, p):
             #записываем max P(x1..xi,y1..i)
             phi[i][state] = max_prob
 
-    return phi[len(x) -1][max(phi[len(x) -1])] # Посчитать max_y P(y|x)
+    max_val = float('-inf')
+    for idx,val in enumerate(phi[len(x) -1]):
+        if phi[len(x) -1][val] > max_val:
+            max_val = phi[len(x) -1][val]
+    return max_val # Посчитать max_y P(y|x)
 
 def get_viterbi_path(x, X, Y, A, B, p):
     # Посчитать y = argmax_y P(y|x)
@@ -113,5 +119,5 @@ if __name__ == "__main__":
         for obs in B[state]:
             B[state][obs] = log(B[state][obs])
 
-    print get_viterbi_probability([1,0,0,1,1,0],X,Y,A,B,p)
-    print ([1,0,0,0,0,0,0,0,1],X,Y,A,B,p)
+    print get_viterbi_probability([1],X,Y,A,B,p)
+    print get_viterbi_path([1,0,0,0,0,0,0,0,1],X,Y,A,B,p)

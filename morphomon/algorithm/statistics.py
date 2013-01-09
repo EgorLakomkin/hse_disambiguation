@@ -1,16 +1,24 @@
 # -*- coding: utf-8 -*-
 from collections import defaultdict
 from math import log
-from morphomon.utils import get_tokens_from_corpora, get_word_ending, EOS_TOKEN
+from morphomon.utils import get_tokens_from_corpora, get_word_ending, EOS_TOKEN, N_default
 
+def default_float():
+    return defaultdict(float)
 
-def calculate_A(corpus_file):
+def default_min_float():
+    return defaultdict( return_min_float )
+
+def return_min_float():
+    return float('-10000')
+
+def calculate_A(corpus_file,N_filter_func=N_default):
     """
     Возвращаем матрицу переходов состояний A и начальный вектор распределения p
     """
-    tokens = get_tokens_from_corpora(corpus_file)
+    tokens = get_tokens_from_corpora(corpus_file,N_filter_func )
 
-    A = defaultdict(lambda: defaultdict(float))
+    A = defaultdict(default_float)
     p = defaultdict(float)
     prev_token = EOS_TOKEN
     for token in tokens:
@@ -48,19 +56,19 @@ def calculate_A(corpus_file):
         p[gram] = log(p[gram]) - log_n_p
 
     for prev_token in A:
-        A[prev_token].default_factory = lambda : float('-10000')
+        A[prev_token].default_factory = return_min_float
 
-    A.default_factory = lambda: defaultdict(lambda : float('-10000'))
-    p.default_factory = lambda : float('-10000')
+    A.default_factory = default_min_float
+    p.default_factory = return_min_float
     return A,p
 
-def calculate_B(corpus_file):
+def calculate_B(corpus_file,N_filter_func=N_default):
     """
     Считаем матрицу наблюдений B
     """
-    tokens = get_tokens_from_corpora(corpus_file)
+    tokens = get_tokens_from_corpora(corpus_file,N_filter_func)
 
-    B = defaultdict(lambda: defaultdict(float))
+    B = defaultdict(default_float)
     #ключ - окончание слова, значение - словарь с грамматическими формамими : грам.форма => кол-во раз встреч в корпусе
 
     for token in tokens:
@@ -84,9 +92,9 @@ def calculate_B(corpus_file):
             B[gram][ending] = log(B[gram][ending]) - log_n
 
     for gram in B:
-        B[gram].default_factory = lambda : float('-10000')
+        B[gram].default_factory = return_min_float
 
-    B.default_factory = lambda: defaultdict(lambda : float('-10000'))
+    B.default_factory = default_min_float
     return B
 
 

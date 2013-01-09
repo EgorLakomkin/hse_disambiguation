@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import codecs
-from morphomon.preprocessing.xml_mystem_to_txt import get_ruscorpora_content
+from morphomon.preprocessing.rus_corpora_parser import get_ruscorpora_content
 from morphomon.utils import get_corpus_files
 
 __author__ = 'egor'

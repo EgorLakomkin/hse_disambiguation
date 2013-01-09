@@ -15,6 +15,15 @@ token_pattern = ur'^(?P<token_name>.*?)\t(?P<token_lemma>.*?)=(?P<token_gram>.*)
 
 EOS_TOKEN = TokenRecord(word='',lemma='',gram='EOS')
 
+def N_ruscorpora_tagset(tagset):
+    token_grams = tagset.split(',')
+    token_grams = set([tag for gram_tag in token_grams for tag in gram_tag.split('=')])
+    return ','.join(token_grams)
+
+def N_mystem_tagset(tagset):
+    #
+    pass
+
 def N_default(tagset):
     """
     Возвращаем неизмененный тагсет
@@ -25,6 +34,7 @@ def N_rnc_pos(tag_set):
     """
     Возвращаем первый тег - тег отвечающий за часть речи во всех системах
     """
+    token_grams = N_ruscorpora_tagset(tag_set)
     token_grams = tag_set.split(',')
     return token_grams[0]
 
@@ -81,3 +91,6 @@ def load_object(filename):
     obj = pickle.load(file)
     file.close()
     return obj
+
+if __name__ == "__main__":
+    print N_ruscorpora_tagset("A=pl,tran=partcp,f,sg")

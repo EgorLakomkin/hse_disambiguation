@@ -6,8 +6,8 @@ def find_word_by_tag(corpus_file, tag):
     pass
 
 if __name__ == "__main__":
-    test_mystem_file = "/home/umka/Dropbox/hse_disabmig/data/mystem/txt/fiction_mystem.txt"
-    test_ruscorpora_file = "/home/umka/Dropbox/hse_disabmig/data/processed/processed_fiction.txt"
+    test_mystem_file = "/home/egor/rnc_mystem.txt"
+    test_ruscorpora_file = "/home/egor/rnc.txt"
     mystem_gram = get_corpus_gram_tags(test_mystem_file)
     ruscorpora_gram = get_corpus_gram_tags(test_ruscorpora_file)
 

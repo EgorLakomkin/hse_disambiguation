@@ -17,7 +17,7 @@ EOS_TOKEN = TokenRecord(word='',lemma='',gram='EOS')
 
 def N_ruscorpora_tagset(tagset):
     token_grams = tagset.split(',')
-    token_grams = set([tag for gram_tag in token_grams for tag in gram_tag.split('=')])
+    token_grams = [tag for gram_tag in token_grams for tag in gram_tag.split('=')]
     return ','.join(token_grams)
 
 def N_mystem_tagset(tagset):

@@ -35,7 +35,7 @@ def N_rnc_pos(tag_set):
     Возвращаем первый тег - тег отвечающий за часть речи во всех системах
     """
     token_grams = N_ruscorpora_tagset(tag_set)
-    token_grams = tag_set.split(',')
+    token_grams = token_grams.split(',')
     return token_grams[0]
 
 def parse_token(line, N_filter_func=N_default):

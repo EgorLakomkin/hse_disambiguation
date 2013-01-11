@@ -10,20 +10,29 @@ __author__ = 'egor'
 class HMMAlgorithm(object):
 
     #реализация алгоритма на основе HMM
-    def __init__(self, corpus_file):
+    def __init__(self, A , B, p , corpus_file):
+        if corpus_file:
+            self.B = calculate_B(corpus_file = corpus_file)
+            self.A,self.p = calculate_A(corpus_file = corpus_file)
 
-        self.B = calculate_B(corpus_file = corpus_file)
-        self.A,self.p = calculate_A(corpus_file = corpus_file)
+
+
+
+
+        else:
+            self.B = B
+            self.A = A
+            self.p = p
 
         gram_pr = set()
         for key in self.B:
             for ending in self.B[key]:
                 gram_pr.add(key)
 
-
         self.X = set([ending for gram in self.B for ending in self.B[gram]])
 
         self.Y = set([gram for gram in gram_pr])
+
 
     def remove_ambiguity(self, variants):
         #формат входящих данных

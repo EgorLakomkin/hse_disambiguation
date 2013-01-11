@@ -15,6 +15,38 @@ token_pattern = ur'^(?P<token_name>.*?)\t(?P<token_lemma>.*?)=(?P<token_gram>.*)
 
 EOS_TOKEN = TokenRecord(word='',lemma='',gram='EOS')
 
+
+pymorphy_coverter = dict()
+pymorphy_coverter[u'с'] = "s"
+pymorphy_coverter[u'п'] = "a"
+pymorphy_coverter[u'г'] = "v"
+pymorphy_coverter[u'мс'] = "s-pro"
+pymorphy_coverter[u'причастие'] = "v"
+pymorphy_coverter[u'деепричастие'] = "v"
+pymorphy_coverter[u'инфинитив'] = "v"
+pymorphy_coverter[u'мс-предк'] = "praedic-pro"
+pymorphy_coverter[u'мс-п'] = "a-pro"
+pymorphy_coverter[u'числ'] = "num"
+pymorphy_coverter[u'числ-п'] = "a-num"
+pymorphy_coverter[u'н'] = "adv"
+pymorphy_coverter[u'предк'] = "praedic"
+pymorphy_coverter[u'предл'] = "pr"
+pymorphy_coverter[u'союз'] = "conj"
+pymorphy_coverter[u'межд'] = "intj"
+pymorphy_coverter[u'част'] = "part"
+pymorphy_coverter[u'вводн'] = "parenth"
+pymorphy_coverter[u'кр_прил'] = "a"
+pymorphy_coverter[u'кр_причастие'] = "v"
+
+def N_pymorphy_tagset_POS(tagset):
+    token_grams = tagset.split(',')
+    gram_class = token_grams[0].lower()
+    try:
+        return pymorphy_coverter[gram_class]
+    except:
+        pass
+
+
 def N_ruscorpora_tagset(tagset):
     token_grams = tagset.split(',')
     token_grams = [tag for gram_tag in token_grams for tag in gram_tag.split('=')]
@@ -92,6 +124,13 @@ def load_object(filename):
     obj = pickle.load(file)
     file.close()
     return obj
+
+def pymorphy_info_token_record_converter(word, pymorphy_info, N_processor):
+    lst = []
+    for info in pymorphy_info:
+        gram = info['class'] + ',' + info['info']
+        lst.append( TokenRecord(word = word, lemma = info['norm'], gram = N_processor(gram) ) )
+    return lst
 
 if __name__ == "__main__":
     print N_ruscorpora_tagset("A=pl,tran=partcp,f,sg")

@@ -22,7 +22,8 @@ def N_ruscorpora_tagset(tagset):
 
 def N_mystem_tagset(tagset):
     #
-    pass
+    token_grams = tagset.split(',')
+    return token_grams[0]
 
 def N_default(tagset):
     """
@@ -78,7 +79,7 @@ def get_tokens_from_corpora(corpus_file,N_filter_func=N_default):
             #выкидываем токен EOS
             yield [TokenRecord(word='\n', lemma='\n', gram = 'EOS')]
         else:
-            yield  parse_token(token,N_filter_func)
+            yield  parse_token(token,N_filter_func = N_filter_func)
 
 
 def dump_object(filename, object):

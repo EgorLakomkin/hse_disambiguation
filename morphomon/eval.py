@@ -1,12 +1,13 @@
 # -*- coding: utf-8 -*-
 import codecs
 import re
-from morphomon.utils import TokenRecord
+from morphomon.utils import TokenRecord, N_rnc_pos
 import settings
 
 __author__ = 'egor'
 
 
+garbage_tags = [ 'init', 'abbr', 'ciph' ]
 
 def M_strict_mathcher(algo_token, gold_token ):
     if algo_token.gram == gold_token.gram and algo_token.lemma == gold_token.lemma and algo_token.word == gold_token.word:
@@ -17,7 +18,14 @@ def P_dump_filter(token):
     return 1
 
 
-def calculate_precision(file_algo_name, file_gold_standart_name, M, P):
+def P_no_garbage(token):
+    gram = token.gram
+    for garbage_tag in garbage_tags:
+        if garbage_tag in gram:
+            return 0
+    return 1
+
+def calculate_precision(file_algo_name, file_gold_standart_name,M, N, P):
     """
     Params :
     fila_algo - файл, который получился в результате алгоритма
@@ -44,15 +52,16 @@ def calculate_precision(file_algo_name, file_gold_standart_name, M, P):
         algo_token_info = re.match(token_pattern, algo_f_tokens[token_index] )
         gold_token_info = re.match(token_pattern, gold_f_tokens[token_index] )
 
-        algo_token_record = TokenRecord(word =algo_token_info.group('token_name'), lemma = algo_token_info.group('token_lemma'), gram = algo_token_info.group('token_gram') )
+        algo_token_record = TokenRecord(word = algo_token_info.group('token_name'), lemma = algo_token_info.group('token_lemma'), gram = N( algo_token_info.group('token_gram') ) )
 
-        gold_token_record = TokenRecord(word =gold_token_info.group('token_name'), lemma = gold_token_info.group('token_lemma'), gram = gold_token_info.group('token_gram') )
+        gold_token_record = TokenRecord(word = gold_token_info.group('token_name'), lemma = gold_token_info.group('token_lemma'), gram = N( gold_token_info.group('token_gram') ) )
+
 
         if P(gold_token_record) > 0:
-            correct += M(algo_token_record,gold_token_record)
+            correct += M( algo_token_record, gold_token_record)
             max_value += 1.0
 
     return float(correct) / max_value
 
 if __name__=="__main__":
-    print calculate_precision(settings.CORPUS_DATA_ROOT + 'processed_opencorpora.txt', settings.CORPUS_DATA_ROOT + 'processed_opencorpora_test.txt', M = M_strict_mathcher, P = P_dump_filter )
+    print calculate_precision(settings.CORPUS_DATA_ROOT + 'processed_opencorpora.txt', settings.CORPUS_DATA_ROOT + 'processed_opencorpora_test.txt',M =M_strict_mathcher,  N = N_rnc_pos, P = P_no_garbage )

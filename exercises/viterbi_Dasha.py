@@ -1,4 +1,4 @@
-﻿from collections import defaultdict
+from collections import defaultdict
 
 Y = set([ 'sun', 'rain' ])
 X = set([ 0, 1 ])
@@ -17,70 +17,72 @@ p['sun'] = 0.5
 p['rain'] = 0.5
 
 def get_viterbi_probability(x, X, Y, A, B, p):
-    P = 0
-    if len(x) == 1:
-        for j in Y:
-            if p[j]*B[j][x[0]] > P:
-                P = p[j]*B[j][x[0]]
-    if len(x) >= 2:
-        P = 0
-        for l in Y:
-            for m in Y:
-                if p[l]*B[l][x[1]]*A[l][m]*B[m][x[1]] > P:
-                    P = p[l]*B[l][x[1]]*A[l][m]*B[m][x[1]]
-                    p_fixed = p[l]*B[l][x[1]]
-                    y_pred = l
-
-        for i in range(2, len(x)):
+    M = defaultdict(lambda: defaultdict(float))
+    vit_prob = []
+    for state in Y:
+        P = p[state]*B[state][x[0]]
+        M[0][state] = P
+        if len(x) == 1:
+            vit_prob.append(M[0][state])
+    
+    for i in range(1, len(x)):
+        for act_state in Y:
             P = 0
-            for l in Y:
-                for m in Y:
-                    if p_fixed*A[y_pred][l]*B[l][x[i-1]]*A[l][m]*B[m][x[i]] > P:
-                        P = p_fixed*A[y_pred][l]*B[l][x[i-1]]*A[l][m]*B[m][x[i]]
-                        fix = p_fixed*A[y_pred][l]*B[l][x[i-1]]
-                        y_pred = l
-            p_fixed = fix
-                
-    return P
-            
+            for previous_state in Y:
+                if M[i-1][previous_state]*A[previous_state][act_state]*B[act_state][x[i]] > P:
+                    P = M[i-1][previous_state]*A[previous_state][act_state]*B[act_state][x[i]]
+            M[i][act_state] = P
+            if i == len(x) - 1:
+                vit_prob.append(M[i][act_state])
+    viterbi = max(vit_prob)
+    return viterbi
+               
   # Посчитать max_y P(y|x)
 
 def get_viterbi_path(x, X, Y, A, B, p):
-    P = 0
-    path = []
-    if len(x) == 1:
-        for j in Y:
-            if p[j]*B[j][x[0]] > P:
-                P = p[j]*B[j][x[0]]
-                y = j
-        path.append(y)
-    if len(x) >= 2:
-        P = 0
-        for l in Y:
-            for m in Y:
-                if p[l]*B[l][x[0]]*A[l][m]*B[m][x[1]] > P:
-                    P = p[l]*B[l][x[0]]*A[l][m]*B[m][x[1]]
-                    p_fixed = p[l]*B[l][x[0]]
-                    y_pred = l
-        path.append(y_pred)
-
-        for i in range(2, len(x)):
-            P = 0
-            for l in Y:
-                for m in Y:
-                    if p_fixed*A[y_pred][l]*B[l][x[i-1]]*A[l][m]*B[m][x[i]] > P:
-                        P = p_fixed*A[y_pred][l]*B[l][x[i-1]]*A[l][m]*B[m][x[i]]
-                        fix = p_fixed*A[y_pred][l]*B[l][x[i-1]]
-                        y_pred = l
-                        y_last = m
-            p_fixed = fix
-            path.append(y_pred)
-        path.append(y_last)
+    M = defaultdict(lambda: defaultdict(float))
+    path = defaultdict(lambda: defaultdict(str))
+    max_path_reversed = []
+    max_path = []
+    for state in Y:
+        P = p[state]*B[state][x[0]]
+        M[0][state] = P
         
-    return P, path
+    if len(x) == 1:
+        P = 0
+        for state in Y:
+            if M[0][state] > P:
+                P = M[0][state]
+                y = state
+        max_path.append(y)
+            
+    for i in range(1, len(x)):            
+        for act_state in Y:
+            P = 0
+            for previous_state in Y:
+                if M[i-1][previous_state]*A[previous_state][act_state]*B[act_state][x[i]] > P:
+                    P = M[i-1][previous_state]*A[previous_state][act_state]*B[act_state][x[i]]
+                    y = previous_state
+            M[i][act_state] = P
+            path[i][act_state] = y
+        if i == len(x) - 1:
+            P = 0
+            for state in Y:
+                if M[i][state] > P:
+                    P = M[i][state]
+                    y = state
+            max_path_reversed.append(y)
+    for s in range(len(x)-1, 0, -1):
+        max_path_reversed.append(path[s][y])
+        y = path[s][y]
+    for i in range(len(max_path_reversed)-1, -1, -1):
+        max_path.append(max_path_reversed[i])
+    return max_path
 
   # Посчитать y = argmax_y P(y|x)
 
-x = [0, 1, 1, 0, 0, 1, 0]
+x = [0, 1, 0, 1]
 print get_viterbi_probability(x, X, Y, A, B, p)
 print get_viterbi_path(x, X, Y, A, B, p)
+
+

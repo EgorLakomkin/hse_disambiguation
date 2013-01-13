@@ -71,8 +71,21 @@ def N_rnc_pos(tag_set):
     token_grams = token_grams.split(',')
     return token_grams[0]
 
+def is_corpus_line_match_out_format(line):
+    if re.match(token_pattern, line):
+        return True
+    return False
+
 def parse_token(line, N_filter_func=N_default):
     tokens = []
+
+    if len(line) ==0:
+        #
+        return [ EOS_TOKEN ]
+
+    if line == '.':
+        return [ EOS_TOKEN ]
+
     m = re.search(u'(.*?)\t', line)
     if m != None:
         m1 = re.findall(u'\t(.*?)=([A-zА-яёЁ0-9,=\-]+)\t?', line)
@@ -91,7 +104,7 @@ def get_corpus_gram_tags(corpus_file):
                 gram_set.add(token_gram)
     return gram_set
 
-def get_corpus_files(corpus_path, pattern="*.xhtml"):
+def get_corpus_files(corpus_path, pattern="*.*"):
     import os
     from glob import glob
 
@@ -109,7 +122,7 @@ def get_tokens_from_corpora(corpus_file,N_filter_func=N_default):
         if not token:
             #здесь нашало нового предложения
             #выкидываем токен EOS
-            yield [TokenRecord(word='\n', lemma='\n', gram = 'EOS')]
+            yield [ EOS_TOKEN ]
         else:
             yield  parse_token(token,N_filter_func = N_filter_func)
 

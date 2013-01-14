@@ -39,7 +39,7 @@ class HMMAlgorithm(object):
             if len(token) == 1 and token[0] == EOS_TOKEN:
                 no_ambig_tokens = self.remove_ambiguity( sentence )
                 for no_ambig_token in no_ambig_tokens:
-                    out_f.write( u"{0}\t{1}={2}\r\n".format(no_ambig_token[0], no_ambig_token[1][0], no_ambig_token[1][1] ) )
+                    out_f.write( u"{0}\t{1}={2}\r\n".format(no_ambig_token[0], 'nolemma', no_ambig_token[1] ) )
                 out_f.write('\r\n')
                 sentence = []
                 continue
@@ -66,22 +66,20 @@ class HMMAlgorithm(object):
             phi[-1][state] = 0.0
             self.A['start'][state] = self.p[state]
 
-        prev_states = ['start']
+        prev_states = [(None, 'start')]
         #проходим все наблюдения
         for i,obs in enumerate(variants):
 
             current_word_form = obs[0]
             current_word_form_ending = get_word_ending(current_word_form)
-            list_of_possible_grams = [(token_record.lemma, token_record.gram) for token_record in obs[1]]
+            list_of_possible_grams = [token_record.gram for token_record in obs[1]]
             #перебираем все возможные следующие состояния
             for state in list_of_possible_grams:
                 max_prob = float('-inf')
                 source_state = None
                 #находим максимальный путь до состояния Y
                 for prev_state in prev_states:
-                    state_gram = state[1]
-                    prev_state_gram = prev_state[1]
-                    prob = phi[i-1][prev_state] + self.A[prev_state][ state_gram ] + self.B[ state_gram ][current_word_form_ending]
+                    prob = phi[i-1][prev_state] + self.A[prev_state][ state ] + self.B[ state ][current_word_form_ending]
                     if prob > max_prob:
                         max_prob = prob
                         source_state = prev_state
@@ -111,7 +109,8 @@ class HMMAlgorithm(object):
             it_state = backtrace[index][it_state]
 
         word_forms = [x[0] for x in variants]
-        return zip(word_forms,path[::-1]) # Посчитать max_y P(y|x)
+
+        return zip(word_forms,path[::-1])
 
 
 
@@ -121,4 +120,4 @@ if __name__=="__main__":
     A = load_object(filename="/home/egor/A_POS_rnc.dat")
     p = load_object(filename="/home/egor/p_POS_rnc.dat")
     hmm_algo = HMMAlgorithm( B = B, A = A, p = p,N_filter_func = N_rnc_pos )
-    hmm_algo.remove_ambiguity_file('/home/egor/rnc_test/_itartass1_2144_0.txt','/home/egor/rnc_test/_itartass1_2144_0_no_ambig.txt')
+    hmm_algo.remove_ambiguity_file('/home/egor/rnc_test/_itartass2_2139_2_ambig.txt','/home/egor/rnc_test/_itartass2_2139_2_no_ambig.txt')

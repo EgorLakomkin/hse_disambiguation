@@ -7,7 +7,7 @@ import re
 
 def get_word_ending(word, enging_length = 3):
     ending = word[-enging_length:]
-    return ending
+    return ending.lower()
 
 TokenRecord = namedtuple('TokenRecord', 'word, lemma, gram')
 #паттерн токена для корпуса со снятой омонимией
@@ -67,7 +67,7 @@ def N_rnc_pos(tag_set):
     """
     Возвращаем первый тег - тег отвечающий за часть речи во всех системах
     """
-    token_grams = N_ruscorpora_tagset(tag_set)
+    token_grams = N_ruscorpora_tagset(tag_set.lower())
     token_grams = token_grams.split(',')
     return token_grams[0]
 
@@ -86,13 +86,16 @@ def parse_token(line, N_filter_func=N_default):
     if line == '.':
         return [ EOS_TOKEN ]
 
-    m = re.search(u'(.*?)\t', line)
-    if m != None:
-        m1 = re.findall(u'\t(.*?)=([A-zА-яёЁ0-9,=\-]+)\t?', line)
-        if m1 != None:
-            for i in m1:
-                x = TokenRecord(word = m.group(1).lower(), lemma = i[0].lower(), gram = N_filter_func( i[1].lower() ) )
-                tokens.append(x)
+    tab_split = line.split('\t')
+    wf = tab_split[0]
+    lemmas = tab_split[1:]
+    for lemma in lemmas:
+        equal_idx = lemma.find('=')
+        cur_lemma = lemma[:equal_idx]
+        gram = N_filter_func(lemma[equal_idx + 1:])
+        x = TokenRecord(word = wf, lemma = cur_lemma, gram = gram )
+        tokens.append(x)
+
     return tokens
 
 def get_corpus_gram_tags(corpus_file):

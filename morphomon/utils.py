@@ -97,7 +97,7 @@ def parse_token(line, N_filter_func=N_default):
 
 def get_corpus_gram_tags(corpus_file):
     gram_set = set()
-    for token_lst in get_tokens_from_corpora(corpus_file):
+    for token_lst in get_tokens_from_file(corpus_file):
         for token in token_lst:
             token_grams = token.gram.split(',')
             for token_gram in token_grams:
@@ -115,7 +115,7 @@ def get_corpus_files(corpus_path, pattern="*.*"):
         files.extend(glob(os.path.join(dir,pattern)))
     return files
 
-def get_tokens_from_corpora(corpus_file,N_filter_func=N_default):
+def get_tokens_from_file(corpus_file,N_filter_func=N_default):
     corpus =  codecs.open( corpus_file, 'r', 'utf-8' )
     data = corpus.read().split('\r\n')
     for token in data:

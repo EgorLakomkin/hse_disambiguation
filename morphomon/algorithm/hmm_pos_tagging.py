@@ -1,13 +1,14 @@
 # -*- coding: utf-8 -*-
-from morphomon.algorithm.statistics import calculate_B, calculate_A
+from morphomon.algorithm.statistics import calculate_B, calculate_A, train_B_corpus, train_A_corpus
 from morphomon.utils import get_word_ending,N_rnc_pos,dump_object, load_object
 import settings
 from exercises.egor_viterbi import get_viterbi_path, get_viterbi_probability
 
 
 if __name__=="__main__":
-    #B = calculate_B(corpus_file = '/home/egor/rnc.txt',N_filter_func=N_rnc_pos)
-    #A,p = calculate_A(corpus_file = '/home/egor/rnc.txt',N_filter_func=N_rnc_pos)
+    #B = train_B_corpus(corpus_dir = '/home/egor/processed_ruscorpora/',N_filter_func = N_rnc_pos)
+    #A,p = train_A_corpus(corpus_dir = '/home/egor/processed_ruscorpora/',N_filter_func  = N_rnc_pos)
+
     #dump_object(filename="/home/egor/B_POS_rnc.dat",object = B)
     #dump_object(filename="/home/egor/A_POS_rnc.dat",object = A)
     #dump_object(filename="/home/egor/p_POS_rnc.dat",object = p)

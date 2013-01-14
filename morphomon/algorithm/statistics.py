@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 from collections import defaultdict
 from math import log
-from morphomon.utils import get_tokens_from_corpora, get_word_ending, EOS_TOKEN, N_default
+from morphomon.utils import get_tokens_from_file, get_word_ending, EOS_TOKEN, N_default, get_corpus_files
+from random import choice
 
 def default_float():
     return defaultdict(float)
@@ -12,21 +13,45 @@ def default_min_float():
 def return_min_float():
     return float('-10000')
 
-def calculate_A(corpus_file,N_filter_func=N_default):
+
+def train_A_corpus(corpus_dir, N_filter_func = N_default):
+    corpus_files = get_corpus_files( corpus_dir )
+    A = defaultdict(default_float)
+    p = defaultdict(float)
+    for file in corpus_files:
+        print "Train A matrix on {0} file".format( file )
+        calculate_A(A,p,file, N_filter_func )
+    A,p = normalize_A_matrix(A,p)
+    return A,p
+
+def train_B_corpus(corpus_dir, N_filter_func = N_default):
+    corpus_files = get_corpus_files( corpus_dir )
+    B = defaultdict(default_float)
+    for file in corpus_files:
+        print "Train B matrix on {0} file".format( file )
+        calculate_B(B,file, N_filter_func )
+    B = normalize_B(B)
+    return B
+
+def calculate_A(A,p, corpus_file,N_filter_func=N_default):
     """
     Возвращаем матрицу переходов состояний A и начальный вектор распределения p
     """
-    tokens = get_tokens_from_corpora(corpus_file,N_filter_func )
+    tokens = get_tokens_from_file(corpus_file,N_filter_func )
 
-    A = defaultdict(default_float)
-    p = defaultdict(float)
+    if A is None:
+        A = defaultdict(default_float)
+        p = defaultdict(float)
+
     prev_token = EOS_TOKEN
     for token in tokens:
 
         if len(token) > 1:
-            raise Exception("You cannot train on corpus with ambiguity")
+            print "Ambiguity in corpus"
+            print "Pick random token"
+            #raise Exception("You cannot train on corpus with ambiguity")
 
-        token = token[0]
+        token = choice(token)
 
         if token.gram == EOS_TOKEN.gram:
             prev_token = token
@@ -41,16 +66,15 @@ def calculate_A(corpus_file,N_filter_func=N_default):
 
         prev_token = token
 
+    return A,p
 
 
-
-    #преобразование вероятности в логарифм
-    #lop p = log (k / n) = log k - log n
+def normalize_A_matrix(A,p):
     for prev_token in A:
         log_n = log(sum([A[prev_token][next_token] for next_token in A[prev_token]]))
         for next_token in A[prev_token]:
             A[prev_token][next_token] = log(A[prev_token][next_token]) - log_n
-    #преобразуем вероятности начального распределения
+        #преобразуем вероятности начального распределения
     log_n_p = log(sum([p[gram] for gram in p]))
     for gram in p:
         p[gram] = log(p[gram]) - log_n_p
@@ -62,21 +86,24 @@ def calculate_A(corpus_file,N_filter_func=N_default):
     p.default_factory = return_min_float
     return A,p
 
-def calculate_B(corpus_file,N_filter_func=N_default):
+
+def calculate_B(B, corpus_file,N_filter_func=N_default):
     """
     Считаем матрицу наблюдений B
     """
-    tokens = get_tokens_from_corpora(corpus_file,N_filter_func)
-
-    B = defaultdict(default_float)
+    tokens = get_tokens_from_file(corpus_file,N_filter_func)
+    if B is None:
+        B = defaultdict(default_float)
     #ключ - окончание слова, значение - словарь с грамматическими формамими : грам.форма => кол-во раз встреч в корпусе
 
     for token in tokens:
 
         if len(token) > 1:
-            raise Exception("You cannot train on corpus with ambiguity")
+            print "Ambiguity in corpus"
+            print "Pick random token"
+            #raise Exception("You cannot train on corpus with ambiguity")
 
-        token = token[0]
+        token = choice(token)
 
         word_form = token.word
         gram = token.gram
@@ -84,8 +111,10 @@ def calculate_B(corpus_file,N_filter_func=N_default):
             ending = get_word_ending(word_form,enging_length=3)
             B[gram][ending] += 1
 
-    #преобразование вероятности в логарифм
-    #lop p = log (k / n) = log k - log n
+    return B
+
+
+def normalize_B(B):
     for gram in B:
         log_n = log(sum([B[gram][ending] for ending in B[gram]]))
         for ending in B[gram]:
@@ -96,6 +125,3 @@ def calculate_B(corpus_file,N_filter_func=N_default):
 
     B.default_factory = default_min_float
     return B
-
-
-

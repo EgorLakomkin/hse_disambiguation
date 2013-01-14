@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from morphomon.utils import get_corpus_gram_tags, get_tokens_from_corpora
+from morphomon.utils import get_corpus_gram_tags, get_tokens_from_file
 
 def find_word_by_tag(corpus_file, tag):
     #for token in get_tokens_from_corpora(corpus_file):

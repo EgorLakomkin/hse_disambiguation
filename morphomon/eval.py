@@ -53,9 +53,9 @@ def calculate_precision(file_algo_name, file_gold_standart_name,M, N, P):
         algo_token_info = re.match(token_pattern, line_algo)
         gold_token_info = re.match(token_pattern, line_gold )
 
-        algo_token_record = TokenRecord(word = algo_token_info.group('token_name'), lemma = algo_token_info.group('token_lemma'), gram = N( algo_token_info.group('token_gram') ) )
+        algo_token_record = TokenRecord(word = algo_token_info.group('token_name').lower(), lemma = algo_token_info.group('token_lemma').lower(), gram = N( algo_token_info.group('token_gram').lower() ) )
         algo_words.add( algo_token_record.word )
-        gold_token_record = TokenRecord(word = gold_token_info.group('token_name'), lemma = gold_token_info.group('token_lemma'), gram = N( gold_token_info.group('token_gram') ) )
+        gold_token_record = TokenRecord(word = gold_token_info.group('token_name').lower(), lemma = gold_token_info.group('token_lemma').lower(), gram = N( gold_token_info.group('token_gram').lower() ) )
         gold_words.add( gold_token_record.word )
 
 
@@ -67,4 +67,4 @@ def calculate_precision(file_algo_name, file_gold_standart_name,M, N, P):
     return float(correct) / max_value
 
 if __name__=="__main__":
-    print calculate_precision('/home/egor/rnc_mystem.txt', '/home/egor/rnc.txt',M =M_strict_mathcher,  N = N_rnc_pos, P = P_no_garbage )
+    print calculate_precision('/home/egor/rnc_test/_itartass1_2144_0_no_ambig.txt', '/home/egor/rnc_test/_itartass1_2144.txt',M =M_strict_mathcher,  N = N_rnc_pos, P = P_no_garbage )

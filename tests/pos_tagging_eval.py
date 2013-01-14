@@ -4,7 +4,7 @@ from morphomon.pymorphy_utils import get_morph_info
 
 __author__ = 'egor'
 
-from morphomon.utils import get_word_ending,N_rnc_pos,dump_object, load_object, parse_token, get_tokens_from_corpora,N_ruscorpora_tagset,N_rnc_pos, pymorphy_info_token_record_converter, N_pymorphy_tagset_POS, EOS_TOKEN
+from morphomon.utils import get_word_ending,N_rnc_pos,dump_object, load_object, parse_token, get_tokens_from_file,N_ruscorpora_tagset,N_rnc_pos, pymorphy_info_token_record_converter, N_pymorphy_tagset_POS, EOS_TOKEN
 
 
 if __name__=="__main__":
@@ -29,7 +29,7 @@ if __name__=="__main__":
     hmm_algo = HMMAlgorithm( B= B , A = A , p = p, corpus_file= None )
 
 
-    gold_standart = get_tokens_from_corpora( corpus_file = "/home/egor/rnc.txt", N_filter_func = N_rnc_pos )
+    gold_standart = get_tokens_from_file( corpus_file = "/home/egor/rnc.txt", N_filter_func = N_rnc_pos )
 
     sentence = []
     gold_sentence = []

@@ -67,11 +67,11 @@ def calculate_precision(file_algo_name, file_gold_standart_name,M, N, P):
             correct += M( algo_token_record, gold_token_record)
             max_value += 1.0
 
-    return correct,max_value
+    return int(float(correct)/max_value * 100)
 
 def calculate_dir_precision(algo_dir, gold_dir, M , N, P):
     pass
 
 
 if __name__=="__main__":
-    print calculate_precision('/home/egor/rnc_test/_itartass2_2139_2_no_ambig.txt', '/home/egor/rnc_test/_itartass2_2139.txt',M =M_strict_mathcher,  N = N_rnc_pos, P = P_no_garbage )
+    print calculate_precision('/home/egor/test/algo/2003_01_02_1981_21.txt', '/home/egor/processed_ruscorpora/2003_01_02_1981.txt',M =M_strict_mathcher,  N = N_rnc_pos, P = P_no_garbage )

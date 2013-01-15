@@ -120,4 +120,4 @@ if __name__=="__main__":
     A = load_object(filename="/home/egor/A_POS_rnc.dat")
     p = load_object(filename="/home/egor/p_POS_rnc.dat")
     hmm_algo = HMMAlgorithm( B = B, A = A, p = p,N_filter_func = N_rnc_pos )
-    hmm_algo.remove_ambiguity_file('/home/egor/rnc_test/_itartass2_2139_2_ambig.txt','/home/egor/rnc_test/_itartass2_2139_2_no_ambig.txt')
+    hmm_algo.remove_ambiguity_file('/home/egor/test/mystem_txt/2003_01_02_1981_21.txt','/home/egor/test/algo/2003_01_02_1981_21.txt')

@@ -63,12 +63,21 @@ def N_default(tagset):
     """
     return tagset
 
+
+
+
 def N_rnc_pos(tag_set):
     """
     Возвращаем первый тег - тег отвечающий за часть речи во всех системах
     """
     token_grams = N_ruscorpora_tagset(tag_set.lower())
     token_grams = token_grams.split(',')
+    if token_grams[0] == 'spro':
+        token_grams[0] = 's-pro'
+    if token_grams[0] == 'advpro':
+        token_grams[0] = 'adv-pro'
+    if token_grams[0] == 'apro':
+        token_grams[0] = 'a-pro'
     return token_grams[0]
 
 def is_corpus_line_match_out_format(line):

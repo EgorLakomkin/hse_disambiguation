@@ -7,10 +7,11 @@ import settings
 __author__ = 'egor'
 
 
-garbage_tags = [ 'init', 'abbr', 'ciph' ]
+garbage_tags = [ 'init', 'abbr', 'ciph', 'bastard' ]
 
 def M_strict_mathcher(algo_token, gold_token ):
-    if algo_token.gram == gold_token.gram and algo_token.lemma == gold_token.lemma and algo_token.word == gold_token.word:
+    #no lemma comparison
+    if algo_token.gram == gold_token.gram  and algo_token.word == gold_token.word:
         return 1.0
     return 0.0
 
@@ -53,14 +54,16 @@ def calculate_precision(file_algo_name, file_gold_standart_name,M, N, P):
         algo_token_info = re.match(token_pattern, line_algo)
         gold_token_info = re.match(token_pattern, line_gold )
 
-        algo_token_record = TokenRecord(word = algo_token_info.group('token_name'), lemma = algo_token_info.group('token_lemma'), gram = N( algo_token_info.group('token_gram') ) )
-        algo_words.add( algo_token_record.word )
-        gold_token_record = TokenRecord(word = gold_token_info.group('token_name'), lemma = gold_token_info.group('token_lemma'), gram = N( gold_token_info.group('token_gram') ) )
-        gold_words.add( gold_token_record.word )
+
+        gold_token_record = TokenRecord(word = gold_token_info.group('token_name').lower(), lemma = gold_token_info.group('token_lemma').lower(), gram = N( gold_token_info.group('token_gram').lower() ) )
+        algo_token_record = TokenRecord(word = algo_token_info.group('token_name').lower(), lemma = algo_token_info.group('token_lemma').lower(), gram = N( algo_token_info.group('token_gram').lower() ) )
+
+        if '-' in gold_token_record.word and '-' not in algo_token_record.word:
+            algo_f.readline()
+            continue
 
 
-
-        if P(gold_token_record) > 0:
+        if P(gold_token_record) > 0 and P(algo_token_record) > 0:
             correct += M( algo_token_record, gold_token_record)
             max_value += 1.0
 
@@ -71,4 +74,4 @@ def calculate_dir_precision(algo_dir, gold_dir, M , N, P):
 
 
 if __name__=="__main__":
-    print calculate_precision('/home/egor/rnc_mystem.txt', '/home/egor/rnc.txt',M =M_strict_mathcher,  N = N_rnc_pos, P = P_no_garbage )
+    print calculate_precision('/home/egor/rnc_test/_itartass2_2139_2_no_ambig.txt', '/home/egor/rnc_test/_itartass2_2139.txt',M =M_strict_mathcher,  N = N_rnc_pos, P = P_no_garbage )

@@ -2,7 +2,7 @@
 import codecs
 from collections import defaultdict
 from morphomon.algorithm.statistics import calculate_B, calculate_A, train_A_corpus, train_B_corpus
-from morphomon.utils import get_word_ending, TokenRecord, N_default, load_object, get_tokens_from_file, EOS_TOKEN, N_rnc_pos
+from morphomon.utils import get_word_ending, TokenRecord, N_default, load_object, get_tokens_from_file, EOS_TOKEN, N_rnc_pos, remove_ambiguity_dir
 import settings
 
 __author__ = 'egor'
@@ -116,8 +116,8 @@ class HMMAlgorithm(object):
 
 if __name__=="__main__":
 
-    B = load_object(filename="/home/egor/B_POS_rnc.dat")
-    A = load_object(filename="/home/egor/A_POS_rnc.dat")
-    p = load_object(filename="/home/egor/p_POS_rnc.dat")
+    B = load_object(filename=r"C:\disamb_test\B_POS_rnc.dat")
+    A = load_object(filename=r"C:\disamb_test\A_POS_rnc.dat")
+    p = load_object(filename=r"C:\disamb_test\p_POS_rnc.dat")
     hmm_algo = HMMAlgorithm( B = B, A = A, p = p,N_filter_func = N_rnc_pos )
-    hmm_algo.remove_ambiguity_file('/home/egor/test/mystem_txt/2003_01_02_1981_21.txt','/home/egor/test/algo/2003_01_02_1981_21.txt')
+    remove_ambiguity_dir(corpus_dir = r"C:\disamb_test\mystem_txt",output_dir = r"C:\disamb_test\hmm_output", algo = hmm_algo )

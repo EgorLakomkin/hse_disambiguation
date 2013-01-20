@@ -39,7 +39,7 @@ def get_tokens_from_corpora(corpus_file):
 #naive_algo.find_ambiguity_words()
 
 for token in get_tokens_from_corpora(f_raw):
-    print naive_algo.remove_ambiguity(token)
+    print naive_algo.remove_ambiguity_sentence(token)
 
 f_raw.close()
 f_disamb.close()

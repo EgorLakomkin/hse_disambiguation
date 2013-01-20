@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import codecs
 from collections import namedtuple
+import os
 import pickle
 import re
 
@@ -138,6 +139,12 @@ def get_tokens_from_file(corpus_file,N_filter_func=N_default):
         else:
             yield  parse_token(token,N_filter_func = N_filter_func)
 
+def get_tokens_from_directory(corpus_dir, file_pattern = "*.*", N_filter_func = N_default):
+    files = get_corpus_files(corpus_dir, pattern = file_pattern )
+    for file in files:
+        for token in get_tokens_from_file(file,N_filter_func=N_filter_func ):
+            yield token
+
 
 def dump_object(filename, object):
     file = open(filename,'wb')
@@ -149,6 +156,26 @@ def load_object(filename):
     obj = pickle.load(file)
     file.close()
     return obj
+
+def remove_ambiguity_dir( corpus_dir, output_dir, algo ):
+    corpus_files = get_corpus_files(corpus_dir)
+
+    num = 0
+    for input_file_name in corpus_files:
+       print "Starting file", input_file_name
+
+
+       out_file = os.path.join( output_dir, os.path.basename( input_file_name ) )
+
+       if os.path.exists( out_file ):
+           num +=1
+           continue
+
+
+       algo.remove_ambiguity_file( input_file_name, out_file )
+
+       num+=1
+       print "{0} file processed. {1}%".format(input_file_name, num/(len(corpus_files)+0.0)*100 )
 
 def pymorphy_info_token_record_converter(word, pymorphy_info, N_processor):
     lst = []

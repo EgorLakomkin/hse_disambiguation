@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 import codecs
+import os
 import re
-from morphomon.utils import TokenRecord, N_rnc_pos
+from morphomon.utils import TokenRecord, N_rnc_pos, get_corpus_files
 import settings
 
 __author__ = 'egor'
@@ -49,29 +50,57 @@ def calculate_precision(file_algo_name, file_gold_standart_name,M, N, P):
         line_gold = line_gold.strip()
 
         if len(line_gold) == 0:
+
             continue
+
+
 
         algo_token_info = re.match(token_pattern, line_algo)
         gold_token_info = re.match(token_pattern, line_gold )
 
+        try:
+            gold_token_record = TokenRecord(word = gold_token_info.group('token_name').lower(), lemma = gold_token_info.group('token_lemma').lower(), gram = N( gold_token_info.group('token_gram').lower() ) )
+            algo_token_record = TokenRecord(word = algo_token_info.group('token_name').lower(), lemma = algo_token_info.group('token_lemma').lower(), gram = N( algo_token_info.group('token_gram').lower() ) )
+        except Exception as e:
+            print e
 
-        gold_token_record = TokenRecord(word = gold_token_info.group('token_name').lower(), lemma = gold_token_info.group('token_lemma').lower(), gram = N( gold_token_info.group('token_gram').lower() ) )
-        algo_token_record = TokenRecord(word = algo_token_info.group('token_name').lower(), lemma = algo_token_info.group('token_lemma').lower(), gram = N( algo_token_info.group('token_gram').lower() ) )
+        if gold_token_record.word!= algo_token_record.word:
+            #пропускаем все предложение где не совпали словоформы
+            skip_line = algo_f.readline().strip()
+            while len(skip_line)>0:
+                skip_line = algo_f.readline().strip()
 
-        if '-' in gold_token_record.word and '-' not in algo_token_record.word:
-            algo_f.readline()
+            skip_line = gold_f.readline().strip()
+            while len(skip_line)>0:
+                skip_line = gold_f.readline().strip()
             continue
+
+        #if '-' in gold_token_record.word and '-' not in algo_token_record.word:
+        #    algo_f.readline()
+        #    continue
 
 
         if P(gold_token_record) > 0 and P(algo_token_record) > 0:
             correct += M( algo_token_record, gold_token_record)
             max_value += 1.0
 
-    return int(float(correct)/max_value * 100)
+    return int(float(correct)/max_value * 100), correct, max_value
 
 def calculate_dir_precision(algo_dir, gold_dir, M , N, P):
-    pass
+    gold_files = get_corpus_files(gold_dir)
+
+    num = 0
+    total = 0
+    total_correct = 0
+    for gold_file in gold_files:
+        algo_file =  os.path.join( algo_dir, os.path.basename( gold_file ) )
+        percent, cur_correct, cur_total = calculate_precision( file_algo_name= algo_file, file_gold_standart_name= gold_file, M=M , N=N, P=P )
+        total += cur_total
+        total_correct += cur_correct
+        print "percent correct", float(total_correct)/total*100
+        num+=1
+        print "{0} file processed. {1}%".format(gold_file, num/(len(gold_files)+0.0)*100 )
 
 
 if __name__=="__main__":
-    print calculate_precision('/home/egor/test/algo/2003_01_02_1981_21.txt', '/home/egor/processed_ruscorpora/2003_01_02_1981.txt',M =M_strict_mathcher,  N = N_rnc_pos, P = P_no_garbage )
+    print calculate_dir_precision(algo_dir=  r'C:\disamb_test\hmm_output',gold_dir=r'C:\disamb_test\gold',M =M_strict_mathcher,  N = N_rnc_pos, P = P_no_garbage )

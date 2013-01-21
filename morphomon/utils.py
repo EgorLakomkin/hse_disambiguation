@@ -4,6 +4,7 @@ from collections import namedtuple
 import os
 import pickle
 import re
+from sys import stderr
 
 
 def get_word_ending(word, enging_length = 3):
@@ -51,6 +52,7 @@ def N_pymorphy_tagset_POS(tagset):
 def N_ruscorpora_tagset(tagset):
     token_grams = tagset.split(',')
     token_grams = [tag for gram_tag in token_grams for tag in gram_tag.split('=')]
+    token_grams[0] = mystem_rnc_pos_convert( token_grams[0] )
     return ','.join(token_grams)
 
 def N_mystem_tagset(tagset):
@@ -65,6 +67,16 @@ def N_default(tagset):
     return tagset
 
 
+def mystem_rnc_pos_convert(pos_tag):
+    if pos_tag == 'spro':
+        return 's-pro'
+    if pos_tag == 'advpro':
+        return 'adv-pro'
+    if pos_tag == 'apro':
+        return 'a-pro'
+    if pos_tag == 'anum':
+        return 'a-num'
+    return pos_tag
 
 
 def N_rnc_pos(tag_set):
@@ -73,13 +85,73 @@ def N_rnc_pos(tag_set):
     """
     token_grams = N_ruscorpora_tagset(tag_set.lower())
     token_grams = token_grams.split(',')
-    if token_grams[0] == 'spro':
-        token_grams[0] = 's-pro'
-    if token_grams[0] == 'advpro':
-        token_grams[0] = 'adv-pro'
-    if token_grams[0] == 'apro':
-        token_grams[0] = 'a-pro'
+    token_grams[0] = mystem_rnc_pos_convert( token_grams[0] )
     return token_grams[0]
+
+
+def N_rnc_default_tags(tag_set):
+    """
+    Возвращаем первый тег - тег отвечающий за часть речи во всех системах
+    """
+    token_grams = N_ruscorpora_tagset(tag_set.lower())
+    token_grams = token_grams.split(',')
+    pos_tag = mystem_rnc_pos_convert( token_grams[0] )
+    gram_tags = filter( lambda x : x in default_tags, token_grams[1:] )
+    return ','.join( [pos_tag] + gram_tags )
+
+
+pos_tag = ['s-pro','adv-pro','a-pro','s','a','num','a-num','v','adv', 'praedic','parenth', 'praedic-pro', 'pr','conj','part', 'intj']
+gender_tags = ['m','f','n','m-f']
+anim_tags = ['anim','inan']
+number_tags = ['sg','pl']
+case_tags = ['nom','gen','gen2','dat','dat2', 'acc','acc2', 'ins','loc','loc2', 'voc', 'adnum']
+form_tags = ['brev','plen']
+degree_tags = ['comp','comp2','supr']
+type = ['pf','ipf']
+pereh_tags = ['intr', 'tran']
+zalog_tags = ['act','pass', 'med']
+verb_form = ['inf','partcp', 'ger']
+naklon_tags = ['indic', 'imper','imper2']
+time_tags = ['praet','praes','fut']
+person_tags = [ '1p','2p','3p' ]
+other_tags = ['persn', 'patrn','famn', 'zoon', '0']
+disamb_tag_set = [ 'anom', 'distort', 'ciph', 'init', 'abbr', 'nonlex' ]
+no_doc_tagset = ['obsc']
+
+full_tag_set = [pos_tag, gender_tags,anim_tags, number_tags, case_tags, form_tags, degree_tags,
+                type, pereh_tags, zalog_tags, verb_form, naklon_tags, time_tags, person_tags, other_tags, disamb_tag_set,no_doc_tagset ]
+
+used_micro_tag_subset = [ pos_tag, gender_tags, number_tags, case_tags, person_tags ]
+
+def find_matching_pos(tag, tag_set = full_tag_set, used_tagset = full_tag_set):
+    for index, possible_tag_lst in enumerate(tag_set):
+        if possible_tag_lst in used_tagset:
+            if tag in possible_tag_lst:
+                return index
+    return None
+    #raise Exception("no matching tag : {0}".format(tag) )
+
+def N_rnc_positional_microsubset(tag_set, used_tagset = used_micro_tag_subset):
+    token_grams = N_ruscorpora_tagset(tag_set.lower())
+    token_grams = token_grams.split(',')
+    result_tag_set_lst = ['' for i in range(len(full_tag_set))]
+    for tag in token_grams:
+        index = find_matching_pos( tag = tag, tag_set= full_tag_set, used_tagset = used_tagset )
+        if index is not None:
+            result_tag_set_lst[ index ] = tag
+    return ','.join( result_tag_set_lst )
+
+
+def N_rnc_positional(tag_set, used_tagset = full_tag_set):
+    token_grams = N_ruscorpora_tagset(tag_set.lower())
+    token_grams = token_grams.split(',')
+    result_tag_set_lst = ['' for i in range(len(full_tag_set))]
+    for tag in token_grams:
+        index = find_matching_pos( tag = tag, tag_set= full_tag_set, used_tagset = used_tagset )
+        if index is not None:
+            result_tag_set_lst[ index ] = tag
+    return ','.join( result_tag_set_lst )
+
 
 def is_corpus_line_match_out_format(line):
     if re.match(token_pattern, line):
@@ -185,4 +257,4 @@ def pymorphy_info_token_record_converter(word, pymorphy_info, N_processor):
     return lst
 
 if __name__ == "__main__":
-    print N_ruscorpora_tagset("A=pl,tran=partcp,f,sg")
+    print N_rnc_positional("A=pl,tran=partCp,f", used_tagset = used_micro_tag_subset)

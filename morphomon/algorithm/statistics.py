@@ -47,8 +47,9 @@ def calculate_A(A,p, corpus_file,N_filter_func=N_default):
     for token in tokens:
 
         if len(token) > 1:
-            print "Ambiguity in corpus"
-            print "Pick random token"
+            pass
+            #print "Ambiguity in corpus"
+            #print "Pick random token"
             #raise Exception("You cannot train on corpus with ambiguity")
 
         token = choice(token)
@@ -99,8 +100,9 @@ def calculate_B(B, corpus_file,N_filter_func=N_default):
     for token in tokens:
 
         if len(token) > 1:
-            print "Ambiguity in corpus"
-            print "Pick random token"
+            pass
+            #print "Ambiguity in corpus"
+            #print "Pick random token"
             #raise Exception("You cannot train on corpus with ambiguity")
 
         token = choice(token)

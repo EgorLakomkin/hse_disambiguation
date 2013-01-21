@@ -1,40 +1,47 @@
 # -*- coding: utf-8 -*-
 import codecs
 from collections import defaultdict
-from morphomon.algorithm.statistics import calculate_B, calculate_A, train_A_corpus, train_B_corpus
-from morphomon.utils import get_word_ending, TokenRecord, N_default, load_object, get_tokens_from_file, EOS_TOKEN, N_rnc_pos, remove_ambiguity_dir, N_rnc_default_tags, dump_object, N_rnc_positional_microsubset, N_rnc_positional
-import settings
+from morphomon.utils import N_rnc_pos, dump_object, get_tokens_from_file, EOS_TOKEN
+from maxent import MaxentModel
 
 __author__ = 'egor'
 
 
-class HMMAlgorithm(object):
+class MMEMAlgorithm(object):
 
     #реализация алгоритма на основе HMM
-    def __init__(self, A = None , B = None, p = None , N_filter_func = N_default):
+    def __init__(self, N_filter_func = N_default):
         self.filter_func = N_filter_func
-        if A and B and p:
-            self.B = B
-            self.A = A
-            self.p = p
-            self.init()
+        self.me = MaxentModel()
 
     def init(self):
-        gram_pr = set()
-        for key in self.B:
-            for ending in self.B[key]:
-                gram_pr.add(key)
+        pass
 
-        self.X = set([ending for gram in self.B for ending in self.B[gram]])
-
-        self.Y = set([gram for gram in gram_pr])
+    def compute_features( self, sentence ,  i):
+        if i > 0:
+            yield "previous-tag={0}".format(   sentence[i - 1].gram  )
+        if i > 1:
+            yield "previous-previous-tag={0}".format(   sentence[i - 2].gram  )
 
     def train_model(self, corpus_dir,N_filter_func = N_default ):
-        self.B = train_B_corpus(corpus_dir = corpus_dir,N_filter_func = N_filter_func)
-        self.A,self.p = train_A_corpus(corpus_dir = corpus_dir,N_filter_func  = N_filter_func)
-        self.filter_func = N_filter_func
-        self.init()
+        self.me.begin_add_event()
+        sentence = []
+        for token in get_tokens_from_file(file, N_filter_func= self.filter_func):
+            if token[0] == EOS_TOKEN:
+                for i,token in enumerate( sentence ):
+                    word_features = list( self.compute_features( sentence, i ) )
+                    self.me.add_event(word_features, token.gram )
+                sentence = []
+                continue
 
+            sentence.append( token )
+
+        self.me.end_add_event()
+        self.me.train()
+
+
+    def save_model(self, filename):
+        self.me.save( filename )
 
     def remove_ambiguity_file(self, file, outfile):
         out_f =  codecs.open( outfile, 'w', 'utf-8' )
@@ -121,8 +128,8 @@ class HMMAlgorithm(object):
 if __name__=="__main__":
 
 
-    hmm_algo = HMMAlgorithm()
-    #hmm_algo.train_model( corpus_dir= "/home/egor/disamb_test/gold/" , N_filter_func= N_rnc_positional_microsubset)
-    #dump_object( r"/home/egor/disamb_test/hmm_positional.dat",  hmm_algo )
-    hmm_algo = load_object( r"/home/egor/disamb_test/hmm_positional.dat"  )
-    remove_ambiguity_dir(corpus_dir = r"/home/egor/disamb_test/mystem_txt",output_dir = r"/home/egor/disamb_test/hmm_full_tags_output", algo = hmm_algo )
+    memm_algo = MMEMAlgorithm()
+    memm_algo.train_model( corpus_dir= "/home/egor/disamb_test/test_gold/" , N_filter_func= N_rnc_pos)
+    memm.save_model( r"/home/egor/disamb_test/memm_positional.dat", )
+    #hmm_algo = load_object( r"/home/egor/disamb_test/hmm_positional.dat"  )
+    #remove_ambiguity_dir(corpus_dir = r"/home/egor/disamb_test/mystem_txt",output_dir = r"/home/egor/disamb_test/hmm_full_tags_output", algo = hmm_algo )

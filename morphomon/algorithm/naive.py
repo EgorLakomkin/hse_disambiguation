@@ -4,7 +4,7 @@ import os
 from random import choice
 
 __author__ = 'egor'
-from morphomon.utils import EOS_TOKEN, get_word_ending, get_tokens_from_directory, dump_object, N_default, N_rnc_pos, get_tokens_from_file, load_object, get_corpus_files, remove_ambiguity_dir
+from morphomon.utils import EOS_TOKEN, get_word_ending, get_tokens_from_directory, dump_object, N_default, N_rnc_pos, get_tokens_from_file, load_object, get_corpus_files, remove_ambiguity_dir, N_rnc_default_tags, N_rnc_positional_microsubset
 from collections import defaultdict
 
 
@@ -69,8 +69,8 @@ class NaiveAlgorithm(object):
 
 if __name__ == "__main__":
 
-    #naive_algo = NaiveAlgorithm( corpus_dir = r"C:\disamb_test\gold", N_func= N_rnc_pos )
-    #dump_object( r"C:\disamb_test\naive.dat" , naive_algo  )
-    naive_algo = load_object( r"C:\disamb_test\naive.dat" )
+    #naive_algo = NaiveAlgorithm( corpus_dir = "/home/egor/disamb_test/gold/", N_func= N_rnc_positional_microsubset )
+    #dump_object( r"/home/egor/disamb_test/naive_positional_full.dat" , naive_algo  )
+    naive_algo = load_object( r"/home/egor/disamb_test/naive_positional_full.dat" )
     #naive_algo.remove_ambiguity_file(r"C:\disamb_test\mystem_txt\_rbk2_2140.txt", r"C:\disamb_test\algo_output\_rbk2_2140.txt" )
-    remove_ambiguity_dir(corpus_dir = r"C:\disamb_test\mystem_txt",output_dir = r"C:\disamb_test\naive_output", algo = naive_algo )
+    remove_ambiguity_dir(corpus_dir = r"/home/egor/disamb_test/mystem_txt",output_dir = r"/home/egor/disamb_test/naive_full_tag_output", algo = naive_algo )

@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from collections import defaultdict
 from math import log
+from exercises.egor_memm import compute_features
 
 Y = set([ 'sun', 'rain' ])
 X = set([ 0, 1 ])
@@ -104,6 +105,8 @@ def get_viterbi_path(x, X, Y, A, B, p):
 
     return path[::-1] # Посчитать max_y P(y|x)
 
+
+
 if __name__ == "__main__":
 
     for state in p:
@@ -120,4 +123,4 @@ if __name__ == "__main__":
             B[state][obs] = log(B[state][obs])
 
     print get_viterbi_probability([1],X,Y,A,B,p)
-    print get_viterbi_path([1,0,0,0,0,0,0,0,1],X,Y,A,B,p)
+    print get_viterbi_path([1,0,1,0,1,0,0,0,1],X,Y,A,B,p)

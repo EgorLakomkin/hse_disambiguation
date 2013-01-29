@@ -56,7 +56,7 @@ def eval_model_sentence(model, observations):
 
     return path
 
-def get_viterbi_path_memm(x, Y,me):
+def get_viterbi_path_memm(x, Y, me):
     # Посчитать y = argmax_y P(y|x)
     #X - наблюдаемые события
     #Y - внутренние состояния

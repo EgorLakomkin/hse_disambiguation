@@ -100,7 +100,7 @@ def N_rnc_default_tags(tag_set):
     return ','.join( [pos_tag] + gram_tags )
 
 
-pos_tag = ['s-pro','adv-pro','a-pro','s','a','num','a-num','v','adv', 'praedic','parenth', 'praedic-pro', 'pr','conj','part', 'intj']
+pos_tag = ['s-pro','adv-pro','a-pro','s','a','num','a-num','v','adv', 'praedic','parenth', 'praedic-pro', 'pr','conj','part', 'intj','bastard']
 gender_tags = ['m','f','n','m-f']
 anim_tags = ['anim','inan']
 number_tags = ['sg','pl']
@@ -121,7 +121,7 @@ no_doc_tagset = ['obsc']
 full_tag_set = [pos_tag, gender_tags,anim_tags, number_tags, case_tags, form_tags, degree_tags,
                 type, pereh_tags, zalog_tags, verb_form, naklon_tags, time_tags, person_tags, other_tags, disamb_tag_set,no_doc_tagset ]
 
-used_micro_tag_subset = [ pos_tag, gender_tags, number_tags, case_tags, person_tags ]
+used_micro_tag_subset = [ pos_tag, gender_tags, number_tags, case_tags, person_tags, disamb_tag_set ]
 
 def find_matching_pos(tag, tag_set = full_tag_set, used_tagset = full_tag_set):
     for index, possible_tag_lst in enumerate(tag_set):
@@ -159,7 +159,7 @@ def is_corpus_line_match_out_format(line):
     return False
 
 def parse_token(line, N_filter_func=N_default):
-    tokens = []
+    tokens = set()
 
     if len(line) ==0:
         #
@@ -176,9 +176,9 @@ def parse_token(line, N_filter_func=N_default):
         cur_lemma = lemma[:equal_idx]
         gram = N_filter_func(lemma[equal_idx + 1:])
         x = TokenRecord(word = wf, lemma = cur_lemma, gram = gram )
-        tokens.append(x)
+        tokens.add(x)
 
-    return tokens
+    return list(tokens)
 
 def get_corpus_gram_tags(corpus_file):
     gram_set = set()

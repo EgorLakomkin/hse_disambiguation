@@ -86,7 +86,10 @@ def N_rnc_pos(tag_set):
     token_grams = N_ruscorpora_tagset(tag_set.lower())
     token_grams = token_grams.split(',')
     token_grams[0] = mystem_rnc_pos_convert( token_grams[0] )
-    return token_grams[0]
+    if token_grams[0] in pos_tag:
+        return token_grams[0]
+    else:
+        return 's'
 
 
 def N_rnc_default_tags(tag_set):
@@ -100,7 +103,7 @@ def N_rnc_default_tags(tag_set):
     return ','.join( [pos_tag] + gram_tags )
 
 
-pos_tag = ['s-pro','adv-pro','a-pro','s','a','num','a-num','v','adv', 'praedic','parenth', 'praedic-pro', 'pr','conj','part', 'intj','bastard']
+pos_tag = ['s-pro','adv-pro','a-pro','s','a','num','a-num','v','adv', 'praedic','parenth', 'praedic-pro', 'pr','conj','part', 'intj']
 gender_tags = ['m','f','n','m-f']
 anim_tags = ['anim','inan']
 number_tags = ['sg','pl']
@@ -117,9 +120,15 @@ person_tags = [ '1p','2p','3p' ]
 other_tags = ['persn', 'patrn','famn', 'zoon', '0']
 disamb_tag_set = [ 'anom', 'distort', 'ciph', 'init', 'abbr', 'nonlex' ]
 no_doc_tagset = ['obsc']
+pos_tagset = [ pos_tag ]
+
 
 full_tag_set = [pos_tag, gender_tags,anim_tags, number_tags, case_tags, form_tags, degree_tags,
                 type, pereh_tags, zalog_tags, verb_form, naklon_tags, time_tags, person_tags, other_tags, disamb_tag_set,no_doc_tagset ]
+
+full_tag_set_str = ['pos', 'gender','amim', 'number', 'case', 'form', 'degree',
+                'type', 'perehod', 'zalog', 'verb_form', 'naklon', 'time', 'person', 'other', 'rnc_disamb','not_in_docs' ]
+
 
 used_micro_tag_subset = [ pos_tag, gender_tags, number_tags, case_tags, person_tags, disamb_tag_set ]
 
@@ -255,6 +264,17 @@ def pymorphy_info_token_record_converter(word, pymorphy_info, N_processor):
         gram = info['class'] + ',' + info['info']
         lst.append( TokenRecord(word = word, lemma = info['norm'], gram = N_processor(gram) ) )
     return lst
+
+def get_diff_between_tokens(token1, token2):
+    token1_pos_gram = N_rnc_positional(token1.gram)
+    token2_pos_gram = N_rnc_positional(token2.gram)
+
+    token2_arr = token2_pos_gram.split(',')
+    lst_errors = []
+    for idx,gram in  enumerate( token1_pos_gram.split(',') ):
+        if gram != token2_arr[idx]:
+            lst_errors.append( full_tag_set_str[idx] )
+    return lst_errors
 
 if __name__ == "__main__":
     print N_rnc_positional("A=pl,tran=partCp,f", used_tagset = used_micro_tag_subset)

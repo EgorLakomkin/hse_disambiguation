@@ -3,7 +3,7 @@ import codecs
 from collections import defaultdict
 import math
 from morphomon.algorithm.statistics import train_B_corpus
-from morphomon.utils import N_rnc_pos, dump_object, get_tokens_from_file, EOS_TOKEN, get_tokens_from_directory, N_default, load_object, remove_ambiguity_dir, get_word_ending
+from morphomon.utils import N_rnc_pos, dump_object, get_tokens_from_file, EOS_TOKEN, get_tokens_from_directory, N_default, load_object, remove_ambiguity_dir, get_word_ending, N_rnc_positional, pos_tagset
 from maxent import MaxentModel
 
 __author__ = 'egor'
@@ -50,6 +50,7 @@ class MMEMAlgorithm(object):
                     self.me.add_event(word_features, token_gram )
                 sentence = []
                 continue
+
 
             sentence.append( token[0] )
 
@@ -118,7 +119,7 @@ class MMEMAlgorithm(object):
                     logprob = math.log(prob)
                     if prev_logprob + logprob > viterbi_layers[i][label]:
                         viterbi_layers[i][label] = prev_logprob + logprob
-                        viterbi_backpointers[i][label] = prev_label
+                        viterbi_backpointers[i][label] -= prev_label
 
         # Most probable endpoint.
         max_logprob = float("-inf")
@@ -143,9 +144,9 @@ class MMEMAlgorithm(object):
 if __name__=="__main__":
 
 
-    #memm_algo = MMEMAlgorithm(N_filter_func= N_rnc_pos)
-    #memm_algo.train_model( corpus_dir= "/home/egor/disamb_test/gold/" , )
-    #memm_algo.save_model(memm_filename =  r"/home/egor/disamb_test/memm_pos.dat", B_stat_filename = r"/home/egor/disamb_test/B_stat_pos.dat" )
     memm_algo = MMEMAlgorithm(N_filter_func= N_rnc_pos)
-    memm_algo.load_memm_model( r"/home/egor/disamb_test/memm_pos.dat"  )
-    remove_ambiguity_dir(corpus_dir = r"/home/egor/disamb_test/mystem_txt",output_dir = r"/home/egor/disamb_test/memm_pos", algo = memm_algo )
+    memm_algo.train_model( corpus_dir= "/home/egor/disamb_test/gold/"  )
+    memm_algo.save_model(memm_filename =  r"/home/egor/disamb_test/memm_pos.dat", B_stat_filename = r"/home/egor/disamb_test/B_stat_pos.dat" )
+    #memm_algo = MMEMAlgorithm(N_filter_func= N_rnc_pos)
+    #memm_algo.load_memm_model( r"/home/egor/disamb_test/memm_pos.dat"  )
+    #remove_ambiguity_dir(corpus_dir = r"/home/egor/disamb_test/mystem_txt",output_dir = r"/home/egor/disamb_test/memm_pos", algo = memm_algo )

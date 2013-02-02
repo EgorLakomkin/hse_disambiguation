@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
 import codecs
+from collections import defaultdict
 import os
 import re
 import sys
-from morphomon.utils import TokenRecord, N_rnc_pos, get_corpus_files, N_default, N_rnc_default_tags, N_rnc_positional_microsubset
+from morphomon.utils import TokenRecord, N_rnc_pos, get_corpus_files, N_default, N_rnc_default_tags, N_rnc_positional_microsubset, get_diff_between_tokens
 import settings
 
 __author__ = 'egor'
@@ -32,6 +33,9 @@ def P_no_garbage(token):
         if garbage_tag in gram:
             return 0
     return 1
+
+
+
 def calculate_precision(file_algo_name, file_gold_standart_name, file_ambi_name, M, N, P):
     """
     Params :
@@ -50,6 +54,8 @@ def calculate_precision(file_algo_name, file_gold_standart_name, file_ambi_name,
     correct_unknown = 0.0
     max_value_known = 0.0
     max_value_unknown = 0.0
+
+    errors = defaultdict( float )
 
     #предполагается, что два файла имеют одинаковый формат и одинаковую длину
     for line_gold in gold_f:
@@ -100,9 +106,15 @@ def calculate_precision(file_algo_name, file_gold_standart_name, file_ambi_name,
                 correct_known += M( algo_token_record, gold_token_record, N=N)
                 max_value_known += 1.0
 
-    return correct_unknown, correct_known, max_value_unknown, max_value_known
+            diff = get_diff_between_tokens( gold_token_record, algo_token_record )
+            for error in diff:
+                errors[ error ] += 1
+
+    return correct_unknown, correct_known, max_value_unknown, max_value_known,errors
 
 def calculate_dir_precision(algo_dir, gold_dir, ambi_dir, M , N, P):
+
+    ambig_dir = get_corpus_files(ambi_dir)
     gold_files = get_corpus_files(gold_dir)
 
     num = 0
@@ -112,24 +124,34 @@ def calculate_dir_precision(algo_dir, gold_dir, ambi_dir, M , N, P):
     total_correct = 0
     total_correct_unknown = 0
     total_correct_known = 0
-    for gold_file in gold_files:
-        algo_file = os.path.join( algo_dir, os.path.basename( gold_file ) )
-        ambi_file = os.path.join( ambi_dir, os.path.basename( gold_file ) )
-        cur_correct_unknown, cur_correct_known, cur_total_unknown, cur_total_known = calculate_precision( file_algo_name= algo_file, file_gold_standart_name= gold_file, file_ambi_name = ambi_file, M=M , N=N, P=P )
-        total_unknown += cur_total_unknown
-        total_known += cur_total_known
-        total = total_unknown + total_known
-        total_correct_unknown += cur_correct_unknown
-        total_correct_known += cur_correct_known
-        total_correct = total_correct_unknown + total_correct_known
+    total_error_stats = defaultdict(float)
+    for ambi_file in ambig_dir:
+        algo_file = os.path.join( algo_dir, os.path.basename( ambi_file ) )
+        gold_file = os.path.join( gold_dir, os.path.basename( ambi_file ) )
 
-        print "percent correct (total)", int(float(total_correct)/total*100)
-        print "percent correct (known words)", int(float(total_correct_known)/total_known*100)
-        print "percent correct (unknown words)", int(float(total_correct_unknown)/total_unknown*100)
+        if os.path.exists( algo_file ) and os.path.exists( gold_file ):
+            cur_correct_unknown, cur_correct_known, cur_total_unknown, cur_total_known,errors = calculate_precision( file_algo_name= algo_file, file_gold_standart_name= gold_file, file_ambi_name = ambi_file, M=M , N=N, P=P )
+            total_unknown += cur_total_unknown
+            total_known += cur_total_known
+            total = total_unknown + total_known
+            total_correct_unknown += cur_correct_unknown
+            total_correct_known += cur_correct_known
+            total_correct = total_correct_unknown + total_correct_known
 
-        num+=1
-        print "{0} file processed. {1}%".format(gold_file, num/(len(gold_files)+0.0)*100 )
+            for k,v in errors.iteritems():
+                total_error_stats[k] += v
+
+            print "percent correct (total)", int(float(total_correct)/total*100)
+            print "percent correct (known words)", int(float(total_correct_known)/total_known*100)
+            print "percent correct (unknown words)", int(float(total_correct_unknown)/total_unknown*100)
+
+            total_errors = sum([v for v in total_error_stats.values() ])
+            for k,v in total_error_stats.iteritems():
+                print "error count in {0} is {1}".format( k,v*100.0/total_errors )
+
+            num+=1
+            print "{0} file processed. {1}%".format(gold_file, num/(len(gold_files)+0.0)*100 )
 
 if __name__=="__main__":
-    print calculate_dir_precision(gold_dir=  r"/home/egor/disamb_test/test_gold/",algo_dir=r"/home/egor/disamb_test/hmm_full_tags_output",
-        ambi_dir= r"/home/egor/disamb_test/mystem_txt", M =M_strict_mathcher,  N = N_rnc_positional_microsubset, P = P_no_garbage )
+    print calculate_dir_precision(gold_dir=  r"/home/egor/disamb_test/gold/",algo_dir=r"/home/egor/disamb_test/hmm_full_tags_output",
+        ambi_dir= r"/home/egor/disamb_test/test_ambig", M =M_strict_mathcher,  N = N_rnc_positional_microsubset, P = P_no_garbage )

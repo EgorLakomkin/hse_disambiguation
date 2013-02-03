@@ -4,7 +4,7 @@ from collections import defaultdict
 import os
 import re
 import sys
-from morphomon.utils import TokenRecord, N_rnc_pos, get_corpus_files, N_default, N_rnc_default_tags, N_rnc_positional_microsubset, get_diff_between_tokens
+from morphomon.utils import TokenRecord, N_rnc_pos, get_corpus_files, N_default, N_rnc_positional_microsubset, get_diff_between_tokens, parse_token, EOS_TOKEN
 import settings
 
 __author__ = 'egor'
@@ -12,10 +12,10 @@ __author__ = 'egor'
 
 garbage_tags = [ 'init', 'abbr', 'ciph', 'bastard' ]
 
-def M_strict_mathcher(algo_token, gold_token, N = N_default ):
+def M_strict_mathcher(algo_token, gold_token):
     #no lemma comparison
-    algo_gram = N(algo_token.gram)
-    gold_gram =  N(gold_token.gram)
+    algo_gram = algo_token.gram
+    gold_gram =  gold_token.gram
     if  algo_gram == gold_gram and algo_token.word == gold_token.word:
         return 1.0
     #print u"Algo output word-form : {0}, gram {1}".format( algo_token.word, algo_gram )
@@ -64,20 +64,14 @@ def calculate_precision(file_algo_name, file_gold_standart_name, file_ambi_name,
         line_ambi = ambi_f.readline().strip()
         line_gold = line_gold.strip()
 
-        if len(line_gold) == 0:
-            continue
 
 
-        algo_token_info = re.match(token_pattern, line_algo)
-        gold_token_info = re.match(token_pattern, line_gold )
+        gold_token_record = parse_token( line_gold, N_filter_func=N)[0]
+        algo_token_record = parse_token( line_algo, N_filter_func=N)[0]
 
-        try:
-            gold_token_record = TokenRecord(word = gold_token_info.group('token_name').lower(), lemma = gold_token_info.group('token_lemma').lower(), gram = N (gold_token_info.group('token_gram').lower()) )
-            algo_token_record = TokenRecord(word = algo_token_info.group('token_name').lower(), lemma = algo_token_info.group('token_lemma').lower(), gram = N (algo_token_info.group('token_gram').lower()) )
-        except Exception as e:
-            print e
 
         if gold_token_record.word!= algo_token_record.word:
+            print >>sys.stderr, u"Gold and algo files does not match. Gold line : {0} \nAlgo line  : {1}".format( line_gold,line_algo  )
             #пропускаем все предложение где не совпали словоформы
             skip_line = algo_f.readline().strip()
             while len(skip_line)>0:
@@ -92,20 +86,21 @@ def calculate_precision(file_algo_name, file_gold_standart_name, file_ambi_name,
                 skip_line = gold_f.readline().strip()
             continue
 
-        #if '-' in gold_token_record.word and '-' not in algo_token_record.word:
-        # algo_f.readline()
-        # continue
-
+        if gold_token_record == EOS_TOKEN:
+            continue
 
         if P(gold_token_record) > 0 and P(algo_token_record) > 0:
-            m = re.search('bastard', line_ambi)
-            if m != None:
-                correct_unknown += M( algo_token_record, gold_token_record, N=N)
+            if 'bastard' in line_ambi:
+                correct_unknown += M( algo_token_record, gold_token_record)
                 max_value_unknown += 1.0
             else:
-                correct_known += M( algo_token_record, gold_token_record, N=N)
+                correct_known += M( algo_token_record, gold_token_record)
                 max_value_known += 1.0
 
+        if gold_token_record != EOS_TOKEN:
+            """
+            Считаем разницу для токенов лишь у которых совпадает словоформа
+            """
             diff = get_diff_between_tokens( gold_token_record, algo_token_record )
             for error in diff:
                 errors[ error ] += 1
@@ -154,4 +149,4 @@ def calculate_dir_precision(algo_dir, gold_dir, ambi_dir, M , N, P):
 
 if __name__=="__main__":
     print calculate_dir_precision(gold_dir=  r"/home/egor/disamb_test/gold/",algo_dir=r"/home/egor/disamb_test/hmm_full_tags_output",
-        ambi_dir= r"/home/egor/disamb_test/test_ambig", M =M_strict_mathcher,  N = N_rnc_positional_microsubset, P = P_no_garbage )
+        ambi_dir= r"/home/egor/disamb_test/test_ambig", M =M_strict_mathcher,  N =  N_rnc_positional_microsubset, P = P_no_garbage )

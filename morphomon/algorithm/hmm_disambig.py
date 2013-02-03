@@ -2,8 +2,7 @@
 import codecs
 from collections import defaultdict
 from morphomon.algorithm.statistics import calculate_B, calculate_A, train_A_corpus, train_B_corpus
-from morphomon.utils import get_word_ending, TokenRecord, N_default, load_object, get_tokens_from_file, EOS_TOKEN, N_rnc_pos, remove_ambiguity_dir, N_rnc_default_tags, dump_object, N_rnc_positional_microsubset, N_rnc_positional
-import settings
+from morphomon.utils import get_word_ending, TokenRecord, N_default, load_object, get_tokens_from_file, EOS_TOKEN, N_rnc_pos, remove_ambiguity_dir,  dump_object, N_rnc_positional_microsubset, N_rnc_positional
 
 __author__ = 'egor'
 
@@ -121,8 +120,8 @@ class HMMAlgorithm(object):
 if __name__=="__main__":
 
 
-    #hmm_algo = HMMAlgorithm()
-    #hmm_algo.train_model( corpus_dir= "/home/egor/disamb_test/test_gold/" , N_filter_func= N_rnc_positional_microsubset)
-    #dump_object( r"/home/egor/disamb_test/hmm_positional.dat",  hmm_algo )
-    hmm_algo = load_object( r"/home/egor/disamb_test/hmm_positional.dat"  )
+    hmm_algo = HMMAlgorithm()
+    hmm_algo.train_model( corpus_dir= "/home/egor/disamb_test/gold/" , N_filter_func= N_rnc_positional_microsubset)
+    dump_object( r"/home/egor/disamb_test/hmm_base.dat",  hmm_algo )
+    #hmm_algo = load_object( r"/home/egor/disamb_test/hmm_positional.dat"  )
     remove_ambiguity_dir(corpus_dir = r"/home/egor/disamb_test/test_ambig",output_dir = r"/home/egor/disamb_test/hmm_full_tags_output", algo = hmm_algo )

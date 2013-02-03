@@ -4,7 +4,7 @@ from morphomon.pymorphy_utils import get_morph_info
 
 __author__ = 'egor'
 
-from morphomon.utils import get_word_ending,N_rnc_pos,dump_object, load_object, parse_token, get_tokens_from_file,N_ruscorpora_tagset,N_rnc_pos, pymorphy_info_token_record_converter, N_pymorphy_tagset_POS, EOS_TOKEN
+from morphomon.utils import get_word_ending,N_rnc_pos,dump_object, load_object, parse_token, get_tokens_from_file,N_ruscorpora_tagset_base_preprocess,N_rnc_pos, pymorphy_info_token_record_converter, N_pymorphy_tagset_POS, EOS_TOKEN
 
 
 if __name__=="__main__":

@@ -2,8 +2,9 @@
 import codecs
 from collections import defaultdict
 import math
+import maxent
 from morphomon.algorithm.statistics import train_B_corpus
-from morphomon.utils import N_rnc_pos, dump_object, get_tokens_from_file, EOS_TOKEN, get_tokens_from_directory, N_default, load_object, remove_ambiguity_dir, get_word_ending, N_rnc_positional, pos_tagset
+from morphomon.utils import N_rnc_pos, dump_object, get_tokens_from_file, EOS_TOKEN, get_tokens_from_directory, N_default, load_object, remove_ambiguity_dir, get_word_ending, N_rnc_positional, pos_tagset, N_rnc_positional_microsubset
 from maxent import MaxentModel
 
 __author__ = 'egor'
@@ -23,6 +24,7 @@ class MMEMAlgorithm(object):
         pass
 
     def compute_features( self, sentence , i, prev_label, analysises):
+
         if prev_label is not None:
             yield "previous-tag={0}".format(   prev_label )
 
@@ -39,6 +41,9 @@ class MMEMAlgorithm(object):
         #self.B = train_B_corpus(corpus_dir = corpus_dir,N_filter_func = N_filter_func)
         sentence = []
         for token in get_tokens_from_directory(corpus_dir = corpus_dir, N_filter_func= self.filter_func):
+
+
+
             if token[0] == EOS_TOKEN:
                 words = [token.word for token in sentence]
                 labels = [token.gram for token in sentence]
@@ -55,7 +60,9 @@ class MMEMAlgorithm(object):
             sentence.append( token[0] )
 
         self.me.end_add_event()
-        self.me.train()
+        maxent.set_verbose(1)
+        self.me.train( 100, 'lbfgs', 0.0 )
+        maxent.set_verbose(0)
 
 
     def save_model(self, memm_filename, B_stat_filename):
@@ -119,7 +126,7 @@ class MMEMAlgorithm(object):
                     logprob = math.log(prob)
                     if prev_logprob + logprob > viterbi_layers[i][label]:
                         viterbi_layers[i][label] = prev_logprob + logprob
-                        viterbi_backpointers[i][label] -= prev_label
+                        viterbi_backpointers[i][label] = prev_label
 
         # Most probable endpoint.
         max_logprob = float("-inf")
@@ -139,14 +146,14 @@ class MMEMAlgorithm(object):
             except KeyError:
                 pass
 
-        return zip(words,path[::-1])
+        return zip(words,path)
 
 if __name__=="__main__":
 
 
-    memm_algo = MMEMAlgorithm(N_filter_func= N_rnc_pos)
-    memm_algo.train_model( corpus_dir= "/home/egor/disamb_test/gold/"  )
-    memm_algo.save_model(memm_filename =  r"/home/egor/disamb_test/memm_pos.dat", B_stat_filename = r"/home/egor/disamb_test/B_stat_pos.dat" )
+    memm_algo = MMEMAlgorithm(N_filter_func= N_rnc_positional_microsubset)
+    memm_algo.train_model( corpus_dir= "/home/egor/disamb_test/test_gold/"  )
+    memm_algo.save_model(memm_filename =  r"/home/egor/disamb_test/memm_positional_mintagset.dat", B_stat_filename = r"/home/egor/disamb_test/B_stat_pos.dat" )
     #memm_algo = MMEMAlgorithm(N_filter_func= N_rnc_pos)
     #memm_algo.load_memm_model( r"/home/egor/disamb_test/memm_pos.dat"  )
-    #remove_ambiguity_dir(corpus_dir = r"/home/egor/disamb_test/mystem_txt",output_dir = r"/home/egor/disamb_test/memm_pos", algo = memm_algo )
+    remove_ambiguity_dir(corpus_dir = r"/home/egor/disamb_test/test_ambig",output_dir = r"/home/egor/disamb_test/memm_positional", algo = memm_algo )

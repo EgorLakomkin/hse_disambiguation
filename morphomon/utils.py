@@ -4,7 +4,7 @@ from collections import namedtuple
 import os
 import pickle
 import re
-from sys import stderr
+import sys
 
 
 def get_word_ending(word, enging_length = 3):
@@ -49,7 +49,7 @@ def N_pymorphy_tagset_POS(tagset):
         pass
 
 
-def N_ruscorpora_tagset(tagset):
+def N_ruscorpora_tagset_base_preprocess(tagset):
     token_grams = tagset.split(',')
     token_grams = [tag for gram_tag in token_grams for tag in gram_tag.split('=')]
     token_grams[0] = mystem_rnc_pos_convert( token_grams[0] )
@@ -76,6 +76,12 @@ def mystem_rnc_pos_convert(pos_tag):
         return 'a-pro'
     if pos_tag == 'anum':
         return 'a-num'
+
+    if pos_tag == 'praedic':
+        return 'adv'
+    if pos_tag == 'parenth':
+        return 'adv'
+
     return pos_tag
 
 
@@ -83,24 +89,15 @@ def N_rnc_pos(tag_set):
     """
     Возвращаем первый тег - тег отвечающий за часть речи во всех системах
     """
-    token_grams = N_ruscorpora_tagset(tag_set.lower())
+    token_grams = N_ruscorpora_tagset_base_preprocess(tag_set.lower())
     token_grams = token_grams.split(',')
     token_grams[0] = mystem_rnc_pos_convert( token_grams[0] )
     if token_grams[0] in pos_tag:
         return token_grams[0]
     else:
+        print >>sys.stderr, u"No pos tag was found in tagset : {0}. Treat as S".format( tag_set )
         return 's'
 
-
-def N_rnc_default_tags(tag_set):
-    """
-    Возвращаем первый тег - тег отвечающий за часть речи во всех системах
-    """
-    token_grams = N_ruscorpora_tagset(tag_set.lower())
-    token_grams = token_grams.split(',')
-    pos_tag = mystem_rnc_pos_convert( token_grams[0] )
-    gram_tags = filter( lambda x : x in default_tags, token_grams[1:] )
-    return ','.join( [pos_tag] + gram_tags )
 
 
 pos_tag = ['s-pro','adv-pro','a-pro','s','a','num','a-num','v','adv', 'praedic','parenth', 'praedic-pro', 'pr','conj','part', 'intj']
@@ -118,7 +115,7 @@ naklon_tags = ['indic', 'imper','imper2']
 time_tags = ['praet','praes','fut']
 person_tags = [ '1p','2p','3p' ]
 other_tags = ['persn', 'patrn','famn', 'zoon', '0']
-disamb_tag_set = [ 'anom', 'distort', 'ciph', 'init', 'abbr', 'nonlex' ]
+disamb_tag_set = [ 'anom', 'distort', 'ciph', 'init', 'abbr', 'nonlex', 'bastard']
 no_doc_tagset = ['obsc']
 pos_tagset = [ pos_tag ]
 
@@ -130,32 +127,34 @@ full_tag_set_str = ['pos', 'gender','amim', 'number', 'case', 'form', 'degree',
                 'type', 'perehod', 'zalog', 'verb_form', 'naklon', 'time', 'person', 'other', 'rnc_disamb','not_in_docs' ]
 
 
-used_micro_tag_subset = [ pos_tag, gender_tags, number_tags, case_tags, person_tags, disamb_tag_set ]
+used_micro_tag_subset = [ pos_tag, gender_tags, number_tags, case_tags, person_tags,time_tags, naklon_tags, disamb_tag_set ]
 
 def find_matching_pos(tag, tag_set = full_tag_set, used_tagset = full_tag_set):
     for index, possible_tag_lst in enumerate(tag_set):
         if possible_tag_lst in used_tagset:
             if tag in possible_tag_lst:
                 return index
-    return None
+
+    #for debug purpose only
+    for possible_tag_lst in tag_set:
+        if tag in possible_tag_lst:
+            return None
+    print >>sys.stderr, u"Cannot find position for tag - {0}".format( tag )
     #raise Exception("no matching tag : {0}".format(tag) )
 
-def N_rnc_positional_microsubset(tag_set, used_tagset = used_micro_tag_subset):
-    token_grams = N_ruscorpora_tagset(tag_set.lower())
-    token_grams = token_grams.split(',')
-    result_tag_set_lst = ['' for i in range(len(full_tag_set))]
-    for tag in token_grams:
-        index = find_matching_pos( tag = tag, tag_set= full_tag_set, used_tagset = used_tagset )
-        if index is not None:
-            result_tag_set_lst[ index ] = tag
-    return ','.join( result_tag_set_lst )
+def N_rnc_positional_microsubset(tag_set):
+    return N_rnc_positional( tag_set = tag_set, used_tagset = used_micro_tag_subset )
 
 
 def N_rnc_positional(tag_set, used_tagset = full_tag_set):
-    token_grams = N_ruscorpora_tagset(tag_set.lower())
-    token_grams = token_grams.split(',')
+
+
+    token_grams = N_ruscorpora_tagset_base_preprocess(tag_set.lower())
+    token_grams = [token for token in token_grams.split(',') if len(token) > 0 ]
     result_tag_set_lst = ['' for i in range(len(full_tag_set))]
     for tag in token_grams:
+        if len(tag) == 0:
+            print >>sys.stderr, "Error tagset : {0}".format( tag_set )
         index = find_matching_pos( tag = tag, tag_set= full_tag_set, used_tagset = used_tagset )
         if index is not None:
             result_tag_set_lst[ index ] = tag

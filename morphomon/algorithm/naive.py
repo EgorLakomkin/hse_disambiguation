@@ -4,7 +4,7 @@ import os
 from random import choice
 
 __author__ = 'egor'
-from morphomon.utils import EOS_TOKEN, get_word_ending, get_tokens_from_directory, dump_object, N_default, N_rnc_pos, get_tokens_from_file, load_object, get_corpus_files, remove_ambiguity_dir, N_rnc_default_tags, N_rnc_positional_microsubset
+from morphomon.utils import EOS_TOKEN, get_word_ending, get_tokens_from_directory, dump_object, N_default, N_rnc_pos, get_tokens_from_file, load_object, get_corpus_files, remove_ambiguity_dir,  N_rnc_positional_microsubset
 from collections import defaultdict
 
 

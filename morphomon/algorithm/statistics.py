@@ -24,10 +24,27 @@ def train_A_corpus(corpus_dir, N_filter_func = N_default):
     A,p = normalize_A_matrix(A,p)
     return A,p
 
+def train_A_corpus_lst_files(corpus_lst_files, N_filter_func = N_default):
+    A = defaultdict(default_float)
+    p = defaultdict(float)
+    for file in corpus_lst_files:
+        print "Train A matrix on {0} file".format( file )
+        calculate_A(A,p,file, N_filter_func )
+    A,p = normalize_A_matrix(A,p)
+    return A,p
+
 def train_B_corpus(corpus_dir, N_filter_func = N_default):
     corpus_files = get_corpus_files( corpus_dir )
     B = defaultdict(default_float)
     for file in corpus_files:
+        print "Train B matrix on {0} file".format( file )
+        calculate_B(B,file, N_filter_func )
+    B = normalize_B(B)
+    return B
+
+def train_B_lst_files(corpus_lst_files, N_filter_func = N_default):
+    B = defaultdict(default_float)
+    for file in corpus_lst_files:
         print "Train B matrix on {0} file".format( file )
         calculate_B(B,file, N_filter_func )
     B = normalize_B(B)

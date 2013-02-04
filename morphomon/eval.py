@@ -98,7 +98,7 @@ def calculate_precision(file_algo_name, file_gold_standart_name, file_ambi_name,
             context.append( (None, None, EOS) )
             continue
 
-        if P(gold_token_record) > 0 and P(algo_token_record) > 0:
+        if P(gold_token_record) > 0:
             result_m = M( algo_token_record, gold_token_record)
 
             if result_m < 1.0:

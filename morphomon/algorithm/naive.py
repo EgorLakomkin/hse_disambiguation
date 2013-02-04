@@ -87,9 +87,10 @@ class NaiveAlgorithm(object):
 def naive_cross_validate(corpus_dir, algo_dir, morph_analysis_dir, N_func):
 
     corpus_files = get_corpus_files(corpus_dir)
-    shuffle( corpus_files )
+
     results = []
     for i in range(1,5):
+        shuffle( corpus_files )
         remove_directory_content(algo_dir)
         print "Starting {0} fold".format( i )
         train_fold_corpus_files = corpus_files[:len(corpus_files)*4/5]
@@ -97,14 +98,15 @@ def naive_cross_validate(corpus_dir, algo_dir, morph_analysis_dir, N_func):
         naive_algo = NaiveAlgorithm(N_func=N_func)
         naive_algo.train_from_filelist( train_fold_corpus_files )
         print "Finished training. Starting testing phase!"
-        remove_ambiguity_file_list(ambig_filelist=test_corpus_files, output_dir= algo_dir, algo =naive_algo )
+        morph_analysis_files = [ os.path.join( morph_analysis_dir, os.path.basename( test_file ) ) for test_file in test_corpus_files if os.path.exists( os.path.join( morph_analysis_dir, os.path.basename( test_file ) ) )]
+        remove_ambiguity_file_list(ambig_filelist=morph_analysis_files, output_dir= algo_dir, algo =naive_algo )
         print "Finished working of algo. Starting measuring phase"
         total_correct_known, total_correct_unknown, total_known, total_unknown = calculate_dir_precision( algo_dir = algo_dir, ambi_dir= morph_analysis_dir, gold_dir =  corpus_dir, M = M_strict_mathcher, N =  N_func, P = P_no_garbage,
             errors_context_filename = r"/home/egor/disamb_test/naive_errors_context_{0}.txt".format( i ),
             errors_statistics_filename = r"/home/egor/disamb_test/naive_errors_statistics_{0}.txt".format( i ))
         results.append((total_correct_known, total_correct_unknown, total_known, total_unknown ) )
-    avg_known_prec = sum([result[0] for result in results]) * 100.0 / sum([result[2]+ result[3] for result in results])
-    avg_unknown_prec = sum([result[1] for result in results]) * 100.0 / sum([result[2]+ result[3] for result in results])
+    avg_known_prec = sum([result[0] for result in results]) * 100.0 / sum([result[2] for result in results])
+    avg_unknown_prec = sum([result[1] for result in results]) * 100.0 / sum([result[3] for result in results])
     print "Average precision known : {0}%".format( avg_known_prec )
     print "Average precision unknown : {0}%".format( avg_unknown_prec )
     print results

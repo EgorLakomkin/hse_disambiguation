@@ -126,8 +126,10 @@ full_tag_set = [pos_tag, gender_tags,anim_tags, number_tags, case_tags, form_tag
 full_tag_set_str = ['pos', 'gender','amim', 'number', 'case', 'form', 'degree',
                 'type', 'perehod', 'zalog', 'verb_form', 'naklon', 'time', 'person', 'other', 'rnc_disamb','not_in_docs' ]
 
+filter_tags = ['norm','bastard']
 
-used_micro_tag_subset = [ pos_tag, gender_tags, number_tags, case_tags, person_tags,time_tags, naklon_tags, disamb_tag_set ]
+used_micro_tag_subset = [ pos_tag, gender_tags, number_tags, case_tags, person_tags,time_tags, naklon_tags ]
+
 
 def find_matching_pos(tag, tag_set = full_tag_set, used_tagset = full_tag_set):
     for index, possible_tag_lst in enumerate(tag_set):
@@ -146,11 +148,13 @@ def N_rnc_positional_microsubset(tag_set):
     return N_rnc_positional( tag_set = tag_set, used_tagset = used_micro_tag_subset )
 
 
+
+
 def N_rnc_positional(tag_set, used_tagset = full_tag_set):
 
 
     token_grams = N_ruscorpora_tagset_base_preprocess(tag_set.lower())
-    token_grams = [token for token in token_grams.split(',') if len(token) > 0 ]
+    token_grams = [token for token in token_grams.split(',') if len(token) > 0 and token not in filter_tags]
     result_tag_set_lst = ['' for i in range(len(full_tag_set))]
     for tag in token_grams:
         if len(tag) == 0:
@@ -218,6 +222,7 @@ def get_tokens_from_file(corpus_file,N_filter_func=N_default):
             yield [ EOS_TOKEN ]
         else:
             yield  parse_token(token,N_filter_func = N_filter_func)
+    corpus.close()
 
 def get_tokens_from_directory(corpus_dir, file_pattern = "*.*", N_filter_func = N_default):
     files = get_corpus_files(corpus_dir, pattern = file_pattern )
@@ -236,6 +241,35 @@ def load_object(filename):
     obj = pickle.load(file)
     file.close()
     return obj
+
+def remove_directory_content(folder):
+    import os
+    for the_file in os.listdir(folder):
+        file_path = os.path.join(folder, the_file)
+        try:
+            if os.path.isfile(file_path):
+                os.unlink(file_path)
+        except Exception, e:
+            print e
+
+def remove_ambiguity_file_list(ambig_filelist, output_dir, algo):
+    num = 0
+    for ambig_file in ambig_filelist:
+        print "Starting removing ambiguity for file", ambig_file
+
+        out_file = os.path.join( output_dir, os.path.basename( ambig_file ) )
+
+        if os.path.exists( out_file ):
+            print "Skipping file {0}".format( ambig_file )
+            num +=1
+            continue
+
+
+        algo.remove_ambiguity_file( ambig_file, out_file )
+
+        num+=1
+        print "{0} file processed. {1}%".format(ambig_file, num/(len(ambig_filelist)+0.0)*100 )
+
 
 def remove_ambiguity_dir( corpus_dir, output_dir, algo ):
     corpus_files = get_corpus_files(corpus_dir)
@@ -272,7 +306,7 @@ def get_diff_between_tokens(token1, token2):
     lst_errors = []
     for idx,gram in  enumerate( token1_pos_gram.split(',') ):
         if gram != token2_arr[idx]:
-            lst_errors.append( full_tag_set_str[idx] )
+            lst_errors.append( (full_tag_set_str[idx], idx) )
     return lst_errors
 
 if __name__ == "__main__":

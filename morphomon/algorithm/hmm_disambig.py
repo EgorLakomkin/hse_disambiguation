@@ -120,8 +120,8 @@ class HMMAlgorithm(object):
 if __name__=="__main__":
 
 
-    hmm_algo = HMMAlgorithm()
-    hmm_algo.train_model( corpus_dir= "/home/egor/disamb_test/gold/" , N_filter_func= N_rnc_positional_microsubset)
-    dump_object( r"/home/egor/disamb_test/hmm_base.dat",  hmm_algo )
-    #hmm_algo = load_object( r"/home/egor/disamb_test/hmm_positional.dat"  )
-    remove_ambiguity_dir(corpus_dir = r"/home/egor/disamb_test/test_ambig",output_dir = r"/home/egor/disamb_test/hmm_full_tags_output", algo = hmm_algo )
+    #hmm_algo = HMMAlgorithm()
+    #hmm_algo.train_model( corpus_dir= "/home/egor/disamb_test/gold/" , N_filter_func= N_rnc_positional_microsubset)
+    #dump_object( r"/home/egor/disamb_test/hmm_base_tags.dat",  hmm_algo )
+    hmm_algo = load_object( r"/home/egor/disamb_test/hmm_base_tags.dat"  )
+    remove_ambiguity_dir(corpus_dir = r"/home/egor/disamb_test/test_ambig",output_dir = r"/home/egor/disamb_test/test_hmm_base_tags", algo = hmm_algo )

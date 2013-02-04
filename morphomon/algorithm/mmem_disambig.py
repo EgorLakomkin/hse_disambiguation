@@ -2,9 +2,11 @@
 import codecs
 from collections import defaultdict
 import math
+import os
 import maxent
+import sys
 from morphomon.algorithm.statistics import train_B_corpus
-from morphomon.utils import N_rnc_pos, dump_object, get_tokens_from_file, EOS_TOKEN, get_tokens_from_directory, N_default, load_object, remove_ambiguity_dir, get_word_ending, N_rnc_positional, pos_tagset, N_rnc_positional_microsubset
+from morphomon.utils import N_rnc_pos, dump_object, get_tokens_from_file, EOS_TOKEN, get_tokens_from_directory, N_default, load_object, remove_ambiguity_dir, get_word_ending, N_rnc_positional, pos_tagset, N_rnc_positional_microsubset, get_corpus_files
 from maxent import MaxentModel
 
 __author__ = 'egor'
@@ -36,32 +38,41 @@ class MMEMAlgorithm(object):
             for analysis in analysises:
                 yield "has_analysis={0}".format( analysis )
 
-    def train_model(self, corpus_dir ):
+    def train_model(self, corpus_dir, ambiguity_dir ):
         self.me.begin_add_event()
         #self.B = train_B_corpus(corpus_dir = corpus_dir,N_filter_func = N_filter_func)
         sentence = []
-        for token in get_tokens_from_directory(corpus_dir = corpus_dir, N_filter_func= self.filter_func):
+
+        corpus_files = get_corpus_files(corpus_dir)
+        for corpus_file in corpus_files:
+
+            morph_analys_file = os.path.join( ambiguity_dir, os.path.basename( corpus_file ) )
+            morph_analys_tokens = get_tokens_from_file(morph_analys_file, N_filter_func = self.filter_func )
+
+            for corpus_token in get_tokens_from_file(corpus_file, N_filter_func = self.filter_func ):
+
+                morph_analys_token = morph_analys_tokens.next()
+                if corpus_token[0] == EOS_TOKEN:
+                    words = [token[0].word for token in sentence]
+                    labels = [token[0].gram for token in sentence]
+                    for i,token_info in enumerate( sentence ):
+                        gold_token = token_info[0]
+                        morph_analysises = [token.gram for token in token_info[1]]
+                        if gold_token.word != token_info[1][0].word:
+                            print >>sys.stderr, u"Cannot match gold token and morph analysis token\n gold token : {0}     morph analysis token : {1}".format( gold_token, morph_analysises )
+                            morph_analysises = None
+                        word_features = list( self.compute_features( sentence = words, i = i , prev_label= labels[ i - 1 ] if i >0 else None, analysises = morph_analysises) )
+                        gold_token_gram = gold_token.gram.encode('utf-8')
+                        self.me.add_event(word_features, gold_token_gram )
+                    sentence = []
+                    continue
 
 
-
-            if token[0] == EOS_TOKEN:
-                words = [token.word for token in sentence]
-                labels = [token.gram for token in sentence]
-                for i,token in enumerate( sentence ):
-
-                    word_features = list( self.compute_features( sentence = words, i = i , prev_label= labels[ i - 1 ] if i >0 else None, analysises = None) )
-                    token_gram = token.gram
-                    token_gram = token_gram.encode('utf-8')
-                    self.me.add_event(word_features, token_gram )
-                sentence = []
-                continue
-
-
-            sentence.append( token[0] )
+                sentence.append( (corpus_token[0], morph_analys_token)  )
 
         self.me.end_add_event()
         maxent.set_verbose(1)
-        self.me.train( 100, 'lbfgs', 0.0 )
+        self.me.train( 1000, 'lbfgs', 0.0 )
         maxent.set_verbose(0)
 
 
@@ -104,11 +115,8 @@ class MMEMAlgorithm(object):
 
         # Compute first layer directly.
         viterbi_layers[0] = self.me.eval_all(list(self.compute_features(sentence=words, i = 0 , prev_label= None, analysises = analysises[0] ) ) )
-        if len(viterbi_layers[0]) ==0 :
-            pass
+
         filtered_viterbi_layer = dict( (k, v) for k, v in viterbi_layers[0] if k in analysises[0] )
-        if len(filtered_viterbi_layer) ==0 :
-            pass
         viterbi_layer_0_prob = sum( [v for v in filtered_viterbi_layer.values() ]  )
         viterbi_layers[0] = dict( (k, math.log(v/viterbi_layer_0_prob) ) for k, v in filtered_viterbi_layer.items() )
 
@@ -152,8 +160,8 @@ if __name__=="__main__":
 
 
     memm_algo = MMEMAlgorithm(N_filter_func= N_rnc_positional_microsubset)
-    memm_algo.train_model( corpus_dir= "/home/egor/disamb_test/test_gold/"  )
+    memm_algo.train_model( corpus_dir= r"/home/egor/disamb_test/test_gold/", ambiguity_dir = r"/home/egor/disamb_test/mystem_txt"  )
     memm_algo.save_model(memm_filename =  r"/home/egor/disamb_test/memm_positional_mintagset.dat", B_stat_filename = r"/home/egor/disamb_test/B_stat_pos.dat" )
     #memm_algo = MMEMAlgorithm(N_filter_func= N_rnc_pos)
     #memm_algo.load_memm_model( r"/home/egor/disamb_test/memm_pos.dat"  )
-    remove_ambiguity_dir(corpus_dir = r"/home/egor/disamb_test/test_ambig",output_dir = r"/home/egor/disamb_test/memm_positional", algo = memm_algo )
+    remove_ambiguity_dir(corpus_dir = r"/home/egor/disamb_test/test_ambig",output_dir = r"/home/egor/disamb_test/memm_base_tags", algo = memm_algo )

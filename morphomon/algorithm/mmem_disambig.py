@@ -3,10 +3,12 @@ import codecs
 from collections import defaultdict
 import math
 import os
+from random import shuffle
 import maxent
 import sys
 from morphomon.algorithm.statistics import train_B_corpus
-from morphomon.utils import N_rnc_pos, dump_object, get_tokens_from_file, EOS_TOKEN, get_tokens_from_directory, N_default, load_object, remove_ambiguity_dir, get_word_ending, N_rnc_positional, pos_tagset, N_rnc_positional_microsubset, get_corpus_files
+from morphomon.eval import calculate_dir_precision, M_strict_mathcher, P_no_garbage
+from morphomon.utils import N_rnc_pos, dump_object, get_tokens_from_file, EOS_TOKEN, get_tokens_from_directory, N_default, load_object, remove_ambiguity_dir, get_word_ending, N_rnc_positional, pos_tagset, N_rnc_positional_microsubset, get_corpus_files, remove_directory_content, remove_ambiguity_file_list, N_rnc_positional_modified_tagset
 from maxent import MaxentModel
 
 __author__ = 'egor'
@@ -38,6 +40,53 @@ class MMEMAlgorithm(object):
             for analysis in analysises:
                 yield "has_analysis={0}".format( analysis )
 
+    def train_model_file_list(self, corpus_filelist, ambiguity_dir ):
+        self.me.begin_add_event()
+        #self.B = train_B_corpus(corpus_dir = corpus_dir,N_filter_func = N_filter_func)
+        sentence = []
+        total = 0
+        skipped = 0
+        for corpus_file in corpus_filelist:
+            print "Training on file {0}".format( corpus_file )
+            morph_analys_file = os.path.join( ambiguity_dir, os.path.basename( corpus_file ) )
+
+            morph_analys_tokens = get_tokens_from_file(morph_analys_file, N_filter_func = self.filter_func ) if os.path.exists( morph_analys_file ) else None
+            if morph_analys_tokens:
+                print "Using mystem features on file {0}".format( morph_analys_file )
+            for corpus_token in get_tokens_from_file(corpus_file, N_filter_func = self.filter_func ):
+
+                try:
+                    morph_analys_token = morph_analys_tokens.next() if morph_analys_tokens else None
+                except StopIteration:
+                    morph_analys_token = None
+
+                total+=1
+                if corpus_token[0] == EOS_TOKEN:
+                    words = [token[0].word for token in sentence]
+                    labels = [token[0].gram for token in sentence]
+                    for i,token_info in enumerate( sentence ):
+                        gold_token = token_info[0]
+                        morph_analysises = [token.gram for token in token_info[1]] if morph_analys_token else None
+                        if morph_analys_token:
+                            if gold_token.word != token_info[1][0].word:
+                                print >>sys.stderr, u"Cannot match gold token and morph analysis token\n gold token : {0}     morph analysis token : {1}".format( gold_token.word, token_info[1][0].word )
+                                morph_analysises = None
+                                skipped +=1
+                        word_features = list( self.compute_features( sentence = words, i = i , prev_label= labels[ i - 1 ] if i >0 else None, analysises = morph_analysises) )
+                        gold_token_gram = gold_token.gram.encode('utf-8')
+                        self.me.add_event(word_features, gold_token_gram )
+                    sentence = []
+                    continue
+
+
+                sentence.append( (corpus_token[0], morph_analys_token)  )
+
+        self.me.end_add_event()
+        maxent.set_verbose(1)
+        self.me.train( 1000, 'lbfgs', 0.0 )
+        maxent.set_verbose(0)
+        print "Percent skipped {0}".format( skipped*100.0/total )
+
     def train_model(self, corpus_dir, ambiguity_dir ):
         self.me.begin_add_event()
         #self.B = train_B_corpus(corpus_dir = corpus_dir,N_filter_func = N_filter_func)
@@ -59,7 +108,7 @@ class MMEMAlgorithm(object):
                         gold_token = token_info[0]
                         morph_analysises = [token.gram for token in token_info[1]]
                         if gold_token.word != token_info[1][0].word:
-                            print >>sys.stderr, u"Cannot match gold token and morph analysis token\n gold token : {0}     morph analysis token : {1}".format( gold_token, morph_analysises )
+                            print >>sys.stderr, u"Cannot match gold token and morph analysis token\n gold token : {0}     morph analysis token : {1}".format( gold_token.word, token_info[1][0].word )
                             morph_analysises = None
                         word_features = list( self.compute_features( sentence = words, i = i , prev_label= labels[ i - 1 ] if i >0 else None, analysises = morph_analysises) )
                         gold_token_gram = gold_token.gram.encode('utf-8')
@@ -156,12 +205,43 @@ class MMEMAlgorithm(object):
 
         return zip(words,path)
 
+def memm_cross_validate(corpus_dir, algo_dir, morph_analysis_dir, N_func):
+
+    corpus_files = get_corpus_files(corpus_dir)
+
+    results = []
+    for i in range(1,2):
+        shuffle( corpus_files )
+        remove_directory_content(algo_dir)
+        print "Starting {0} fold".format( i )
+        train_fold_corpus_files = corpus_files[:len(corpus_files)*4/5]
+        test_corpus_files = corpus_files[len(corpus_files)*4/5:]
+        memm_algo = MMEMAlgorithm(N_filter_func=N_func)
+
+        morph_analysis_files_train = [ os.path.join( morph_analysis_dir, os.path.basename( test_file ) ) for test_file in train_fold_corpus_files if os.path.exists( os.path.join( morph_analysis_dir, os.path.basename( test_file ) ) )]
+
+        morph_analysis_files_test = [ os.path.join( morph_analysis_dir, os.path.basename( test_file ) ) for test_file in test_corpus_files if os.path.exists( os.path.join( morph_analysis_dir, os.path.basename( test_file ) ) )]
+
+        memm_algo.train_model_file_list(corpus_filelist =  train_fold_corpus_files, ambiguity_dir = morph_analysis_dir )
+        print "Finished training. Starting testing phase!"
+        remove_ambiguity_file_list(ambig_filelist=morph_analysis_files_test, output_dir= algo_dir, algo = memm_algo )
+        print "Finished working of algo. Starting measuring phase"
+        total_correct_known, total_correct_unknown, total_known, total_unknown = calculate_dir_precision( algo_dir = algo_dir, ambi_dir= morph_analysis_dir, gold_dir =  corpus_dir, M = M_strict_mathcher, N =  N_func, P = P_no_garbage,
+            errors_context_filename = r"/home/egor/disamb_test/hmm_errors_context_{0}.txt".format( i ),
+            errors_statistics_filename = r"/home/egor/disamb_test/hmm_errors_statistics_{0}.txt".format( i ))
+        results.append((total_correct_known, total_correct_unknown, total_known, total_unknown ) )
+    avg_known_prec = sum([result[0] for result in results]) * 100.0 / sum([result[2] for result in results])
+    avg_unknown_prec = sum([result[1] for result in results]) * 100.0 / sum([result[3] for result in results])
+    print "Average precision known : {0}%".format( avg_known_prec )
+    print "Average precision unknown : {0}%".format( avg_unknown_prec )
+
 if __name__=="__main__":
 
 
-    memm_algo = MMEMAlgorithm(N_filter_func= N_rnc_positional_microsubset)
-    memm_algo.train_model( corpus_dir= r"/home/egor/disamb_test/test_gold/", ambiguity_dir = r"/home/egor/disamb_test/mystem_txt"  )
-    memm_algo.save_model(memm_filename =  r"/home/egor/disamb_test/memm_positional_mintagset.dat", B_stat_filename = r"/home/egor/disamb_test/B_stat_pos.dat" )
+    #memm_algo = MMEMAlgorithm(N_filter_func= N_rnc_positional_microsubset)
+    #memm_algo.train_model( corpus_dir= r"/home/egor/disamb_test/test_gold/", ambiguity_dir = r"/home/egor/disamb_test/mystem_txt"  )
+    #memm_algo.save_model(memm_filename =  r"/home/egor/disamb_test/memm_positional_mintagset.dat", B_stat_filename = r"/home/egor/disamb_test/B_stat_pos.dat" )
     #memm_algo = MMEMAlgorithm(N_filter_func= N_rnc_pos)
     #memm_algo.load_memm_model( r"/home/egor/disamb_test/memm_pos.dat"  )
-    remove_ambiguity_dir(corpus_dir = r"/home/egor/disamb_test/test_ambig",output_dir = r"/home/egor/disamb_test/memm_base_tags", algo = memm_algo )
+    #remove_ambiguity_dir(corpus_dir = r"/home/egor/disamb_test/test_ambig",output_dir = r"/home/egor/disamb_test/memm_base_tags", algo = memm_algo )
+    memm_cross_validate( corpus_dir = "/home/egor/disamb_test/gold/", algo_dir= "/home/egor/disamb_test/memm_pos", morph_analysis_dir= r"/home/egor/disamb_test/mystem_txt", N_func = N_rnc_positional_modified_tagset )

@@ -52,6 +52,17 @@ def N_pymorphy_tagset_POS(tagset):
 def N_ruscorpora_tagset_base_preprocess(tagset):
     token_grams = tagset.split(',')
     token_grams = [tag for gram_tag in token_grams for tag in gram_tag.split('=')]
+    if 'adv' in token_grams and 'praedic' in token_grams:
+        token_grams.remove('praedic')
+    if 'adv' in token_grams and 'parenth' in token_grams:
+        token_grams.remove('parenth')
+    if 'gen2' in token_grams:
+        token_grams.remove('gen2')
+        token_grams.append('gen')
+
+    if 'loc2' in token_grams:
+        token_grams.remove('loc2')
+        token_grams.append('loc')
     token_grams[0] = mystem_rnc_pos_convert( token_grams[0] )
     return ','.join(token_grams)
 
@@ -100,7 +111,7 @@ def N_rnc_pos(tag_set):
 
 
 
-pos_tag = ['s-pro','adv-pro','a-pro','s','a','num','a-num','v','adv', 'praedic','parenth', 'praedic-pro', 'pr','conj','part', 'intj']
+pos_tag = ['s-pro','adv-pro','a-pro','s','a','num','a-num','v','adv', 'praedic','parenth', 'praedic-pro', 'pr','conj','part', 'intj','abrev','vger','vpartcp']
 gender_tags = ['m','f','n','m-f']
 anim_tags = ['anim','inan']
 number_tags = ['sg','pl']
@@ -129,6 +140,7 @@ full_tag_set_str = ['pos', 'gender','amim', 'number', 'case', 'form', 'degree',
 filter_tags = ['norm','bastard']
 
 used_micro_tag_subset = [ pos_tag, gender_tags, number_tags, case_tags, person_tags,time_tags, naklon_tags ]
+used_modified_tag_subset = [ pos_tag, gender_tags, number_tags, case_tags, person_tags,time_tags, naklon_tags ]
 
 
 def find_matching_pos(tag, tag_set = full_tag_set, used_tagset = full_tag_set):
@@ -147,7 +159,18 @@ def find_matching_pos(tag, tag_set = full_tag_set, used_tagset = full_tag_set):
 def N_rnc_positional_microsubset(tag_set):
     return N_rnc_positional( tag_set = tag_set, used_tagset = used_micro_tag_subset )
 
-
+def N_rnc_positional_modified_tagset(tag_set):
+    tag_set = N_ruscorpora_tagset_base_preprocess(tag_set.lower())
+    if 'a,' in tag_set and 'brev' in tag_set:
+        tag_set = tag_set.replace('brev', '')
+        tag_set = tag_set.replace('a,', 'abrev,',1)
+    elif 'v,' in tag_set and 'partcp' in tag_set:
+        tag_set = tag_set.replace('partcp', '')
+        tag_set = tag_set.replace('v,', 'vpartcp,',1)
+    elif 'v,' in tag_set and 'ger' in tag_set:
+        tag_set = tag_set.replace('ger', '')
+        tag_set = tag_set.replace('v,', 'vger,',1)
+    return N_rnc_positional( tag_set = tag_set, used_tagset = used_micro_tag_subset )
 
 
 def N_rnc_positional(tag_set, used_tagset = full_tag_set):
@@ -310,4 +333,4 @@ def get_diff_between_tokens(token1, token2):
     return lst_errors
 
 if __name__ == "__main__":
-    print N_rnc_positional("A=pl,tran=partCp,f", used_tagset = used_micro_tag_subset)
+    print N_rnc_positional_modified_tagset("V=pl,dat,tran=partCp,f,brev,ger,voc")

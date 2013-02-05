@@ -6,7 +6,7 @@ import sys
 from morphomon.eval import calculate_dir_precision, M_strict_mathcher, P_no_garbage
 
 __author__ = 'egor'
-from morphomon.utils import EOS_TOKEN, get_word_ending, get_tokens_from_directory, dump_object, N_default, N_rnc_pos, get_tokens_from_file, load_object, get_corpus_files, remove_ambiguity_dir,  N_rnc_positional_microsubset, remove_directory_content, remove_ambiguity_file_list
+from morphomon.utils import EOS_TOKEN, get_word_ending, get_tokens_from_directory, dump_object, N_default, N_rnc_pos, get_tokens_from_file, load_object, get_corpus_files, remove_ambiguity_dir,  N_rnc_positional_microsubset, remove_directory_content, remove_ambiguity_file_list, N_rnc_positional_modified_tagset
 from collections import defaultdict
 
 
@@ -118,4 +118,4 @@ if __name__ == "__main__":
     #naive_algo = load_object( r"/home/egor/disamb_test/naive_positional_full.dat" )
     #naive_algo.remove_ambiguity_file(r"C:\disamb_test\mystem_txt\_rbk2_2140.txt", r"C:\disamb_test\algo_output\_rbk2_2140.txt" )
     #remove_ambiguity_dir(corpus_dir = r"/home/egor/disamb_test/mystem_txt",output_dir = r"/home/egor/disamb_test/naive_full_tag_output", algo = naive_algo )
-    naive_cross_validate( corpus_dir = "/home/egor/disamb_test/gold/", algo_dir= "/home/egor/disamb_test/baseline_pos", morph_analysis_dir= r"/home/egor/disamb_test/mystem_txt", N_func = N_rnc_pos )
+    naive_cross_validate( corpus_dir = "/home/egor/disamb_test/test_gold/", algo_dir= "/home/egor/disamb_test/baseline_pos", morph_analysis_dir= r"/home/egor/disamb_test/test_ambig", N_func = N_rnc_pos )

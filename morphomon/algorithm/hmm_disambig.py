@@ -4,8 +4,8 @@ from collections import defaultdict
 import os
 from random import shuffle
 from morphomon.algorithm.statistics import calculate_B, calculate_A, train_A_corpus, train_B_corpus, train_A_corpus_lst_files, train_B_lst_files
-from morphomon.eval import calculate_dir_precision
-from morphomon.utils import get_word_ending, TokenRecord, N_default, load_object, get_tokens_from_file, EOS_TOKEN, N_rnc_pos, remove_ambiguity_dir,  dump_object, N_rnc_positional_microsubset, N_rnc_positional, remove_ambiguity_file_list, remove_directory_content, get_corpus_files
+from morphomon.eval import calculate_dir_precision, P_no_garbage, M_strict_mathcher
+from morphomon.utils import get_word_ending, TokenRecord, N_default, load_object, get_tokens_from_file, EOS_TOKEN, N_rnc_pos, remove_ambiguity_dir,  dump_object, N_rnc_positional_microsubset, N_rnc_positional, remove_ambiguity_file_list, remove_directory_content, get_corpus_files, N_rnc_positional_modified_tagset
 
 __author__ = 'egor'
 
@@ -159,4 +159,4 @@ if __name__=="__main__":
     #dump_object( r"/home/egor/disamb_test/hmm_base_tags.dat",  hmm_algo )
     #hmm_algo = load_object( r"/home/egor/disamb_test/hmm_base_tags.dat"  )
     #remove_ambiguity_dir(corpus_dir = r"/home/egor/disamb_test/test_ambig",output_dir = r"/home/egor/disamb_test/test_hmm_base_tags", algo = hmm_algo )
-    hmm_cross_validate( corpus_dir = "/home/egor/disamb_test/gold/", algo_dir= "/home/egor/disamb_test/hmm_pos", morph_analysis_dir= r"/home/egor/disamb_test/mystem_txt", N_func = N_rnc_pos )
+    hmm_cross_validate( corpus_dir = "/home/egor/disamb_test/gold/", algo_dir= "/home/egor/disamb_test/hmm_modified_tags", morph_analysis_dir= r"/home/egor/disamb_test/mystem_txt", N_func = N_rnc_positional_modified_tagset )

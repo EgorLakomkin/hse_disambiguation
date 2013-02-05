@@ -52,13 +52,12 @@ def calculate_precision(file_algo_name, file_gold_standart_name, file_ambi_name,
     error_context_f = open( errors_context_filename,'a+' )
     error_stat_f = open( errors_statistics_filename,'a+' )
 
-
-    token_pattern = ur'^(?P<token_name>.*?)\t(?P<token_lemma>.*?)=(?P<token_gram>.*)$'
     correct_known = 0.0
     correct_unknown = 0.0
     max_value_known = 0.0
     max_value_unknown = 0.0
 
+    skipped = 0
     errors = defaultdict( float )
 
     context = []
@@ -80,7 +79,7 @@ def calculate_precision(file_algo_name, file_gold_standart_name, file_ambi_name,
 
         if gold_token_record.word!= algo_token_record.word:
             print >>sys.stderr, u"Gold and algo files does not match. Gold line : {0} \nAlgo line  : {1}".format( line_gold,line_algo  )
-            #пропускаем все предложение где не совпали словоформы
+            #пропускаем все предложение где есть слова с съехавшими не совпали словоформы
             skip_line = algo_f.readline().strip()
             while len(skip_line)>0:
                 skip_line = algo_f.readline().strip()
@@ -91,7 +90,7 @@ def calculate_precision(file_algo_name, file_gold_standart_name, file_ambi_name,
 
             skip_line = gold_f.readline().strip()
             while len(skip_line)>0:
-                skip_line = gold_f.readline().strip()
+                skip_line = gold_f.next().strip()
             continue
 
         if gold_token_record == EOS_TOKEN:

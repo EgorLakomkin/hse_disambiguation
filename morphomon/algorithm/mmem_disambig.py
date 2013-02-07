@@ -25,6 +25,7 @@ class MMEMAlgorithm(object):
     def __init__(self, N_filter_func = N_default):
         self.filter_func = N_filter_func
         self.me = MaxentModel()
+        self.num_train_iters = 1000
 
     def load_memm_model(self, filename):
         self.me.load( filename  )
@@ -127,7 +128,7 @@ class MMEMAlgorithm(object):
 
         self.me.end_add_event()
         maxent.set_verbose(1)
-        self.me.train( 1000, 'lbfgs', 0.0 )
+        self.me.train( self.num_train_iters, 'lbfgs', 0.0 )
         maxent.set_verbose(0)
 
     def train_model(self, corpus_dir, ambiguity_dir ):
@@ -162,7 +163,7 @@ class MMEMAlgorithm(object):
 
         self.me.end_add_event()
         maxent.set_verbose(1)
-        self.me.train( 1000, 'lbfgs', 0.0 )
+        self.me.train( 50, 'lbfgs', 0.0 )
         maxent.set_verbose(0)
 
 
@@ -251,7 +252,10 @@ def memm_cross_validate(corpus_dir, algo_dir, morph_analysis_dir, N_func, P):
     corpus_files = get_corpus_files(corpus_dir)
 
     results = []
-    for i in range(1,2):
+
+    num_iters = 2
+
+    for i in range(1,num_iters + 1):
         shuffle( corpus_files )
         remove_directory_content(algo_dir)
         print "Starting {0} fold".format( i )
@@ -263,7 +267,7 @@ def memm_cross_validate(corpus_dir, algo_dir, morph_analysis_dir, N_func, P):
 
         morph_analysis_files_test = [ os.path.join( morph_analysis_dir, os.path.basename( test_file ) ) for test_file in test_corpus_files if os.path.exists( os.path.join( morph_analysis_dir, os.path.basename( test_file ) ) )]
 
-        memm_algo.train_model_file_list(corpus_filelist =  train_fold_corpus_files, ambiguity_dir = morph_analysis_dir,P = P_no_garbage )
+        memm_algo.train_model_file_list(corpus_filelist =  train_fold_corpus_files, ambiguity_dir = morph_analysis_dir )
         print "Finished training. Starting testing phase!"
         remove_ambiguity_file_list(ambig_filelist=morph_analysis_files_test, output_dir= algo_dir, algo = memm_algo )
         print "Finished working of algo. Starting measuring phase"
@@ -271,10 +275,23 @@ def memm_cross_validate(corpus_dir, algo_dir, morph_analysis_dir, N_func, P):
             errors_context_filename = r"/home/egor/disamb_test/hmm_errors_context_{0}.txt".format( i ),
             errors_statistics_filename = r"/home/egor/disamb_test/hmm_errors_statistics_{0}.txt".format( i ))
         results.append((total_correct_known, total_correct_unknown, total_known, total_unknown ) )
+
     avg_known_prec = sum([result[0] for result in results]) * 100.0 / sum([result[2] for result in results])
     avg_unknown_prec = sum([result[1] for result in results]) * 100.0 / sum([result[3] for result in results])
+    std_dev_known = math.sqrt( sum([ (float(result[0])/result[2]*100.0 - avg_known_prec)* (float(result[0])/result[2]*100.0 - avg_known_prec) for result in results ] )  /num_iters )
+    std_dev_unknown = math.sqrt( sum([ (float(result[1])/result[3]*100.0 -avg_unknown_prec)* (float(result[1])/result[3]*100.0 - avg_unknown_prec )  for result in results ]  )  /num_iters )
+    avg_upper_bound = sum([result[4] for result in results]) * 100.0 / sum([result[2]+result[3] for result in results])
+
+    stdev_upper_bound = math.sqrt( sum([ (float(result[4])/(result[2] + result[3])*100.0 - avg_upper_bound)* (float(result[4])/(result[2] + result[3])*100.0 - avg_unknown_prec )  for result in results ]  )  /num_iters )
+
     print "Average precision known : {0}%".format( avg_known_prec )
+    print "StdDev known : {0}%".format( std_dev_known )
+
     print "Average precision unknown : {0}%".format( avg_unknown_prec )
+    print "StdDev unknown : {0}%".format( std_dev_unknown )
+    print "Average upper bound : {0}%".format( avg_upper_bound )
+
+    print "StdDev upperbound : {0}%".format( stdev_upper_bound )
 
 if __name__=="__main__":
 
@@ -285,4 +302,4 @@ if __name__=="__main__":
     #memm_algo = MMEMAlgorithm(N_filter_func= N_rnc_pos)
     #memm_algo.load_memm_model( r"/home/egor/disamb_test/memm_pos.dat"  )
     #remove_ambiguity_dir(corpus_dir = r"/home/egor/disamb_test/test_ambig",output_dir = r"/home/egor/disamb_test/memm_base_tags", algo = memm_algo )
-    memm_cross_validate( corpus_dir = "/home/egor/disamb_test/test_gold/", algo_dir= "/home/egor/disamb_test/memm_modified_tags", morph_analysis_dir= r"/home/egor/disamb_test/test_ambig", N_func = N_rnc_positional_modified_tagset )
+    memm_cross_validate( corpus_dir = "/home/egor/disamb_test/test_gold/", algo_dir= "/home/egor/disamb_test/memm_modified_tags", morph_analysis_dir= r"/home/egor/disamb_test/test_ambig", N_func = N_rnc_positional_modified_tagset , P = P_no_garbage)

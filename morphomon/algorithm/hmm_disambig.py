@@ -3,6 +3,7 @@ import codecs
 from collections import defaultdict
 import os
 from random import shuffle
+import math
 from morphomon.algorithm.statistics import calculate_B, calculate_A, train_A_corpus, train_B_corpus, train_A_corpus_lst_files, train_B_lst_files
 from morphomon.eval import calculate_dir_precision, P_no_garbage, M_strict_mathcher
 from morphomon.utils import get_word_ending, TokenRecord, N_default, load_object, get_tokens_from_file, EOS_TOKEN, N_rnc_pos, remove_ambiguity_dir,  dump_object, N_rnc_positional_microsubset, N_rnc_positional, remove_ambiguity_file_list, remove_directory_content, get_corpus_files, N_rnc_positional_modified_tagset
@@ -129,7 +130,8 @@ def hmm_cross_validate(corpus_dir, algo_dir, morph_analysis_dir, N_func):
     corpus_files = get_corpus_files(corpus_dir)
 
     results = []
-    for i in range(1,5):
+    num_iters = 5
+    for i in range(1,num_iters + 1):
         shuffle( corpus_files )
         remove_directory_content(algo_dir)
         print "Starting {0} fold".format( i )
@@ -145,10 +147,24 @@ def hmm_cross_validate(corpus_dir, algo_dir, morph_analysis_dir, N_func):
             errors_context_filename = r"/home/egor/disamb_test/hmm_errors_context_{0}.txt".format( i ),
             errors_statistics_filename = r"/home/egor/disamb_test/hmm_errors_statistics_{0}.txt".format( i ))
         results.append((total_correct_known, total_correct_unknown, total_known, total_unknown ) )
+
     avg_known_prec = sum([result[0] for result in results]) * 100.0 / sum([result[2] for result in results])
     avg_unknown_prec = sum([result[1] for result in results]) * 100.0 / sum([result[3] for result in results])
+    std_dev_known = math.sqrt( sum([ (float(result[0])/result[2]*100.0 - avg_known_prec)* (float(result[0])/result[2]*100.0 - avg_known_prec) for result in results ] )  / num_iters )
+    std_dev_unknown = math.sqrt( sum([ (float(result[1])/result[3]*100.0 -avg_unknown_prec)* (float(result[1])/result[3]*100.0 - avg_unknown_prec )  for result in results ]  )  / num_iters )
+    avg_upper_bound = sum([result[4] for result in results]) * 100.0 / sum([result[2]+result[3] for result in results])
+
+    stdev_upper_bound = math.sqrt( sum([ (float(result[4])/(result[2] + result[3])*100.0 - avg_upper_bound)* (float(result[4])/(result[2] + result[3])*100.0 - avg_unknown_prec )  for result in results ]  )  / num_iters )
+
     print "Average precision known : {0}%".format( avg_known_prec )
+    print "StdDev known : {0}%".format( std_dev_known )
+
     print "Average precision unknown : {0}%".format( avg_unknown_prec )
+    print "StdDev unknown : {0}%".format( std_dev_unknown )
+    print "Average upper bound : {0}%".format( avg_upper_bound )
+
+    print "StdDev upperbound : {0}%".format( stdev_upper_bound )
+
     print results
 
 if __name__=="__main__":
@@ -159,4 +175,4 @@ if __name__=="__main__":
     #dump_object( r"/home/egor/disamb_test/hmm_base_tags.dat",  hmm_algo )
     #hmm_algo = load_object( r"/home/egor/disamb_test/hmm_base_tags.dat"  )
     #remove_ambiguity_dir(corpus_dir = r"/home/egor/disamb_test/test_ambig",output_dir = r"/home/egor/disamb_test/test_hmm_base_tags", algo = hmm_algo )
-    hmm_cross_validate( corpus_dir = "/home/egor/disamb_test/gold/", algo_dir= "/home/egor/disamb_test/hmm_modified_tags", morph_analysis_dir= r"/home/egor/disamb_test/mystem_txt", N_func = N_rnc_positional_modified_tagset )
+    hmm_cross_validate( corpus_dir = "/home/egor/disamb_test/test_gold/", algo_dir= "/home/egor/disamb_test/hmm_modified_tags", morph_analysis_dir= r"/home/egor/disamb_test/test_ambig", N_func = N_rnc_positional_modified_tagset )

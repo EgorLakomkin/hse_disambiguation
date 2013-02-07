@@ -8,7 +8,7 @@ import maxent
 import sys
 from morphomon.algorithm.statistics import train_B_corpus
 from morphomon.eval import calculate_dir_precision, M_strict_mathcher, P_no_garbage
-from morphomon.utils import N_rnc_pos, dump_object, get_tokens_from_file, EOS_TOKEN, get_tokens_from_directory, N_default, load_object, remove_ambiguity_dir, get_word_ending, N_rnc_positional, pos_tagset, N_rnc_positional_microsubset, get_corpus_files, remove_directory_content, remove_ambiguity_file_list, N_rnc_positional_modified_tagset
+from morphomon.utils import N_rnc_pos, dump_object, get_tokens_from_file, EOS_TOKEN, get_tokens_from_directory, N_default, load_object, remove_ambiguity_dir, get_word_ending, N_rnc_positional, pos_tagset, N_rnc_positional_microsubset, get_corpus_files, remove_directory_content, remove_ambiguity_file_list, N_rnc_positional_modified_tagset, get_gender, get_case, get_number
 from maxent import MaxentModel
 
 __author__ = 'egor'
@@ -33,7 +33,7 @@ class MMEMAlgorithm(object):
     def init(self):
         pass
 
-    def compute_features( self, sentence , i, prev_label, analysises):
+    def compute_features( self, sentence , i, prev_label, analysises, labels):
 
         if prev_label is not None:
             yield "previous-tag={0}".format(   prev_label )
@@ -54,16 +54,26 @@ class MMEMAlgorithm(object):
             if sentence[k].encode('utf-8') in PREPS:
                 yield "has preposition {0} at {1}".format(sentence[k].encode('utf-8'), k - i)
 
+        #совпадение по числу.падежу, роду
+        for k in xrange( max(0, i -2 ), i ):
+            if get_gender( labels[k] ) == get_gender( labels[i] ) and get_gender( labels[i] ):
+                yield "has same gender at pos {1}".format(sentence[k].encode('utf-8'), k - i)
+            if get_case( labels[k] ) == get_case( labels[i] ) and get_case( labels[i] ):
+                yield "has same case at pos {1}".format(sentence[k].encode('utf-8'), k - i)
+            if get_number( labels[k] ) == get_number( labels[i] ) and get_number( labels[i] ):
+                yield "has same gender at pos {1}".format(sentence[k].encode('utf-8'), k - i)
+
 
 
     def train_model_file_list(self, corpus_filelist, ambiguity_dir ):
         self.me.begin_add_event()
         #self.B = train_B_corpus(corpus_dir = corpus_dir,N_filter_func = N_filter_func)
-        sentence = []
+
         total = 0
         skipped = 0
         for corpus_file in corpus_filelist:
             print "Training on file {0}".format( corpus_file )
+            sentence = []
             morph_analys_file = os.path.join( ambiguity_dir, os.path.basename( corpus_file ) )
 
             morph_analys_tokens = get_tokens_from_file(morph_analys_file, N_filter_func = self.filter_func ) if os.path.exists( morph_analys_file ) else None
@@ -118,7 +128,7 @@ class MMEMAlgorithm(object):
                                 print >>sys.stderr, u"Cannot match gold token and morph analysis token\n gold token : {0}     morph analysis token : {1}".format( gold_token.word, token_info[1][0].word )
                                 morph_analysises = None
 
-                        word_features = list( self.compute_features( sentence = words, i = i , prev_label= labels[ i - 1 ] if i >0 else None, analysises = morph_analysises) )
+                        word_features = list( self.compute_features( sentence = words, i = i , prev_label= labels[ i - 1 ] if i >0 else None, analysises = morph_analysises, labels = labels) )
                         gold_token_gram = gold_token.gram.encode('utf-8')
                         self.me.add_event(word_features, gold_token_gram )
                     sentence = []
@@ -154,7 +164,7 @@ class MMEMAlgorithm(object):
                         if gold_token.word != token_info[1][0].word:
                             print >>sys.stderr, u"Cannot match gold token and morph analysis token\n gold token : {0}     morph analysis token : {1}".format( gold_token.word, token_info[1][0].word )
                             morph_analysises = None
-                        word_features = list( self.compute_features( sentence = words, i = i , prev_label= labels[ i - 1 ] if i >0 else None, analysises = morph_analysises) )
+                        word_features = list( self.compute_features( sentence = words, i = i , prev_label= labels[ i - 1 ] if i >0 else None, analysises = morph_analysises, labels = labels) )
                         gold_token_gram = gold_token.gram.encode('utf-8')
                         self.me.add_event(word_features, gold_token_gram )
                     sentence = []
@@ -205,7 +215,7 @@ class MMEMAlgorithm(object):
         viterbi_backpointers = [ None for i in xrange(len(words) + 1) ]
 
         # Compute first layer directly.
-        viterbi_layers[0] = self.me.eval_all(list(self.compute_features(sentence=words, i = 0 , prev_label= None, analysises = analysises[0] ) ) )
+        viterbi_layers[0] = self.me.eval_all(list(self.compute_features(sentence=words, i = 0 , prev_label= None, analysises = analysises[0], labels = None ) ) )
 
         filtered_viterbi_layer = dict( (k, v) for k, v in viterbi_layers[0] if k in analysises[0] )
         viterbi_layer_0_prob = sum( [v for v in filtered_viterbi_layer.values() ]  )

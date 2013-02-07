@@ -159,6 +159,19 @@ def find_matching_pos(tag, tag_set = full_tag_set, used_tagset = full_tag_set):
 def N_rnc_positional_microsubset(tag_set):
     return N_rnc_positional( tag_set = tag_set, used_tagset = used_micro_tag_subset )
 
+def N_rnc_positional_modified_pos(tag_set):
+    tag_set = N_ruscorpora_tagset_base_preprocess(tag_set.lower())
+    if 'a,' in tag_set and 'brev' in tag_set:
+        tag_set = tag_set.replace('brev', '')
+        tag_set = tag_set.replace('a,', 'abrev,',1)
+    elif 'v,' in tag_set and 'partcp' in tag_set:
+        tag_set = tag_set.replace('partcp', '')
+        tag_set = tag_set.replace('v,', 'vpartcp,',1)
+    elif 'v,' in tag_set and 'ger' in tag_set:
+        tag_set = tag_set.replace('ger', '')
+        tag_set = tag_set.replace('v,', 'vger,',1)
+    return N_rnc_pos(tag_set)
+
 def N_rnc_positional_modified_tagset(tag_set):
     tag_set = N_ruscorpora_tagset_base_preprocess(tag_set.lower())
     if 'a,' in tag_set and 'brev' in tag_set:
@@ -341,4 +354,4 @@ def get_corpora_preps(corpus_dir):
     return preps
 
 if __name__ == "__main__":
-    print  ','.join( get_corpora_preps( "/home/egor/disamb_test/test_gold/") )
+    print  N_rnc_positional_modified_pos('v,pl,ger')

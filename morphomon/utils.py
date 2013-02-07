@@ -145,15 +145,15 @@ used_modified_tag_subset = [ pos_tag, gender_tags, number_tags, case_tags, perso
 
 def get_gender(positiona_tag_set):
     tag_set = positiona_tag_set.split(',')
-    return tag_set[1] if len(tag_set[1]) > 0 else None
+    return tag_set[1] if len(tag_set)>1 and len(tag_set[1]) > 0 else None
 
 def get_case(positiona_tag_set):
     tag_set = positiona_tag_set.split(',')
-    return tag_set[4] if len(tag_set[4]) > 0 else None
+    return tag_set[4] if len(tag_set) > 5 and len(tag_set[4]) > 0 else None
 
 def get_number(positiona_tag_set):
     tag_set = positiona_tag_set.split(',')
-    return tag_set[3] if len(tag_set[3]) > 0 else None
+    return tag_set[3] if len(tag_set) > 4 and len(tag_set[3]) > 0 else None
 
 def find_matching_pos(tag, tag_set = full_tag_set, used_tagset = full_tag_set):
     for index, possible_tag_lst in enumerate(tag_set):

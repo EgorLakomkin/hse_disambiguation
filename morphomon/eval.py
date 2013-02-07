@@ -72,6 +72,7 @@ def calculate_precision(file_algo_name, file_gold_standart_name, file_ambi_name,
 
         gold_token_record = parse_token( line_gold, N_filter_func=N)[0]
         algo_token_record = parse_token( line_algo, N_filter_func=N)[0]
+        ambig_token_records = parse_token( line_ambi, N_filter_func=N)
 
         ERROR = 1
         OK = 0
@@ -80,22 +81,41 @@ def calculate_precision(file_algo_name, file_gold_standart_name, file_ambi_name,
         if gold_token_record.word!= algo_token_record.word:
             print >>sys.stderr, u"Gold and algo files does not match. Gold line : {0} \nAlgo line  : {1}".format( line_gold,line_algo  )
             #пропускаем все предложение где есть слова с съехавшими не совпали словоформы
-            skip_line = algo_f.readline().strip()
-            while len(skip_line)>0:
-                skip_line = algo_f.readline().strip()
 
-            skip_line = ambi_f.readline().strip()
-            while len(skip_line)>0:
+            try:
+                skip_line = gold_f.readline().strip()
+                while len(skip_line)>0:
+                    skip_line = gold_f.readline().strip()
+                skip_line = gold_f.readline().strip()
+                gold_token = parse_token( skip_line, N_filter_func=N)[0]
+
                 skip_line = ambi_f.readline().strip()
+                ambi_token = parse_token( skip_line, N_filter_func=N)
+                while ambi_token[0].word != gold_token.word:
+                    skip_line = ambi_f.next().strip()
+                    ambi_token = parse_token( skip_line, N_filter_func=N)
 
-            skip_line = gold_f.readline().strip()
-            while len(skip_line)>0:
-                skip_line = gold_f.next().strip()
-            continue
+                skip_line = algo_f.readline().strip()
+                algo_f_token = parse_token( skip_line, N_filter_func=N)[0]
+
+                while algo_f_token.word != gold_token.word:
+                    skip_line = algo_f.readline().strip()
+                    algo_f_token = parse_token( skip_line, N_filter_func=N)[0]
+
+                gold_token_record = gold_token
+                algo_token_record = algo_f_token
+                ambig_token_records = ambi_token
+            except StopIteration:
+                continue
+
+
+
 
         if gold_token_record == EOS_TOKEN:
             context.append( (None, None, EOS) )
             continue
+
+
 
         if P(gold_token_record) > 0:
             result_m = M( algo_token_record, gold_token_record)

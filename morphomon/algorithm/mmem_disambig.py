@@ -13,6 +13,11 @@ from maxent import MaxentModel
 
 __author__ = 'egor'
 
+PREPS = ['за','путём','вво','позади','со','близ','от','после','включая','ввиду','помимо','из-за','против','до','наперекор','для','насчёт',
+         'перд','ко','кончая','вслед','возле','вне','вопреки','перед','передо','над','посреди','наподобие','а-ля','внутри','благодаря','кроме',
+         'изо','вследствие','без','через','вдоль','спустя','безо','среди','вместо','прежде','по','при','о','у','вблизи','обо','к','подобно',
+         'во','про','вроде','из','касательно','меж','проо','ради','на','из-под','под','относительно','сверху','мимо','посредством','согласно',
+         'вокруг','между','ото','накануне','сквозь','в','об','около','сверх','с','минус','средь']
 
 class MMEMAlgorithm(object):
 
@@ -40,6 +45,16 @@ class MMEMAlgorithm(object):
             for analysis in analysises:
                 yield "has_analysis={0}".format( analysis )
 
+        if len(sentence[i]) <= 3:
+            yield "is={0}".format(sentence[i].encode('utf-8'))
+
+        n = len( sentence )
+        for k in xrange(max(0, i - 2), min(n, i + 3)):
+            if sentence[k].encode('utf-8') in PREPS:
+                yield "has preposition {0} at {1}".format(sentence[k].encode('utf-8'), k - i)
+
+
+
     def train_model_file_list(self, corpus_filelist, ambiguity_dir ):
         self.me.begin_add_event()
         #self.B = train_B_corpus(corpus_dir = corpus_dir,N_filter_func = N_filter_func)
@@ -53,39 +68,67 @@ class MMEMAlgorithm(object):
             morph_analys_tokens = get_tokens_from_file(morph_analys_file, N_filter_func = self.filter_func ) if os.path.exists( morph_analys_file ) else None
             if morph_analys_tokens:
                 print "Using mystem features on file {0}".format( morph_analys_file )
-            for corpus_token in get_tokens_from_file(corpus_file, N_filter_func = self.filter_func ):
 
-                try:
-                    morph_analys_token = morph_analys_tokens.next() if morph_analys_tokens else None
-                except StopIteration:
-                    morph_analys_token = None
+            gold_tokens = get_tokens_from_file(corpus_file, N_filter_func = self.filter_func )
+            for corpus_token in gold_tokens:
 
-                total+=1
-                if corpus_token[0] == EOS_TOKEN:
+                morph_analys_token = morph_analys_tokens.next() if morph_analys_tokens else None
+
+
+                gold_token_word = corpus_token[0].word
+                morph_analys_token_word = morph_analys_token[0].word if morph_analys_token else None
+                if morph_analys_token_word:
+                    if gold_token_word != morph_analys_token_word:
+                        '''
+                        if ('-' in gold_token_word and '-' not in morph_analys_token_word) or ('\'' in gold_token_word and '\'' not in morph_analys_token_word):
+                            morph_analys_token = morph_analys_tokens.next()
+                        if ('.' in gold_token_word):
+                            cnt_dots = '.'.count( gold_token_word )
+                            for i in xrange( 0, cnt_dots ):
+                                morph_analys_token = morph_analys_tokens.next()
+                        '''
+                        print >>sys.stderr, u"Start skipping sentence. Gold token wordform {0} morph token wordform {1}".format( gold_token_word, morph_analys_token_word )
+
+                        sentence = []
+                        try:
+                            next_gold = gold_tokens.next()
+                            while( next_gold !=  [EOS_TOKEN] ):
+                                next_gold = gold_tokens.next()
+
+                            next_gold = gold_tokens.next()
+                            next_morph = morph_analys_tokens.next()
+                            while( next_morph[0].word != next_gold[0].word ):
+                                next_morph = morph_analys_tokens.next()
+
+                        except StopIteration:
+                            break
+
+
+
+                if corpus_token[0] == EOS_TOKEN and len(sentence) > 0:
                     words = [token[0].word for token in sentence]
                     labels = [token[0].gram for token in sentence]
                     for i,token_info in enumerate( sentence ):
                         gold_token = token_info[0]
-                        morph_analysises = [token.gram for token in token_info[1]] if morph_analys_token else None
-                        if morph_analys_token:
+                        morph_analysises = [token.gram for token in token_info[1]] if token_info[1] and morph_analys_token else None
+
+                        if token_info[1] is not None:
                             if gold_token.word != token_info[1][0].word:
                                 print >>sys.stderr, u"Cannot match gold token and morph analysis token\n gold token : {0}     morph analysis token : {1}".format( gold_token.word, token_info[1][0].word )
                                 morph_analysises = None
-                                skipped +=1
+
                         word_features = list( self.compute_features( sentence = words, i = i , prev_label= labels[ i - 1 ] if i >0 else None, analysises = morph_analysises) )
                         gold_token_gram = gold_token.gram.encode('utf-8')
                         self.me.add_event(word_features, gold_token_gram )
                     sentence = []
-                    continue
+                else:
+                    sentence.append( (corpus_token[0], morph_analys_token)  )
 
-
-                sentence.append( (corpus_token[0], morph_analys_token)  )
 
         self.me.end_add_event()
         maxent.set_verbose(1)
         self.me.train( 1000, 'lbfgs', 0.0 )
         maxent.set_verbose(0)
-        print "Percent skipped {0}".format( skipped*100.0/total )
 
     def train_model(self, corpus_dir, ambiguity_dir ):
         self.me.begin_add_event()
@@ -114,10 +157,8 @@ class MMEMAlgorithm(object):
                         gold_token_gram = gold_token.gram.encode('utf-8')
                         self.me.add_event(word_features, gold_token_gram )
                     sentence = []
-                    continue
-
-
-                sentence.append( (corpus_token[0], morph_analys_token)  )
+                else:
+                    sentence.append( (corpus_token[0], morph_analys_token)  )
 
         self.me.end_add_event()
         maxent.set_verbose(1)
@@ -205,7 +246,7 @@ class MMEMAlgorithm(object):
 
         return zip(words,path)
 
-def memm_cross_validate(corpus_dir, algo_dir, morph_analysis_dir, N_func):
+def memm_cross_validate(corpus_dir, algo_dir, morph_analysis_dir, N_func, P):
 
     corpus_files = get_corpus_files(corpus_dir)
 
@@ -222,7 +263,7 @@ def memm_cross_validate(corpus_dir, algo_dir, morph_analysis_dir, N_func):
 
         morph_analysis_files_test = [ os.path.join( morph_analysis_dir, os.path.basename( test_file ) ) for test_file in test_corpus_files if os.path.exists( os.path.join( morph_analysis_dir, os.path.basename( test_file ) ) )]
 
-        memm_algo.train_model_file_list(corpus_filelist =  train_fold_corpus_files, ambiguity_dir = morph_analysis_dir )
+        memm_algo.train_model_file_list(corpus_filelist =  train_fold_corpus_files, ambiguity_dir = morph_analysis_dir,P = P_no_garbage )
         print "Finished training. Starting testing phase!"
         remove_ambiguity_file_list(ambig_filelist=morph_analysis_files_test, output_dir= algo_dir, algo = memm_algo )
         print "Finished working of algo. Starting measuring phase"
@@ -244,4 +285,4 @@ if __name__=="__main__":
     #memm_algo = MMEMAlgorithm(N_filter_func= N_rnc_pos)
     #memm_algo.load_memm_model( r"/home/egor/disamb_test/memm_pos.dat"  )
     #remove_ambiguity_dir(corpus_dir = r"/home/egor/disamb_test/test_ambig",output_dir = r"/home/egor/disamb_test/memm_base_tags", algo = memm_algo )
-    memm_cross_validate( corpus_dir = "/home/egor/disamb_test/gold/", algo_dir= "/home/egor/disamb_test/memm_pos", morph_analysis_dir= r"/home/egor/disamb_test/mystem_txt", N_func = N_rnc_positional_modified_tagset )
+    memm_cross_validate( corpus_dir = "/home/egor/disamb_test/test_gold/", algo_dir= "/home/egor/disamb_test/memm_modified_tags", morph_analysis_dir= r"/home/egor/disamb_test/test_ambig", N_func = N_rnc_positional_modified_tagset )

@@ -3,6 +3,7 @@ import codecs
 import os
 from random import choice, shuffle
 import sys
+import math
 from morphomon.eval import calculate_dir_precision, M_strict_mathcher, P_no_garbage
 
 __author__ = 'egor'
@@ -107,8 +108,15 @@ def naive_cross_validate(corpus_dir, algo_dir, morph_analysis_dir, N_func):
         results.append((total_correct_known, total_correct_unknown, total_known, total_unknown ) )
     avg_known_prec = sum([result[0] for result in results]) * 100.0 / sum([result[2] for result in results])
     avg_unknown_prec = sum([result[1] for result in results]) * 100.0 / sum([result[3] for result in results])
+    std_dev_known = math.sqrt( sum([ (float(result[0])/result[2]*100.0 - avg_known_prec)* (float(result[0])/result[2]*100.0 - avg_known_prec) for result in results ] )  /5 )
+    std_dev_unknown = math.sqrt( sum([ (float(result[1])/result[3]*100.0 -avg_unknown_prec)* (float(result[1])/result[3]*100.0 - avg_unknown_prec )  for result in results ]  )  /5 )
+
     print "Average precision known : {0}%".format( avg_known_prec )
+    print "StdDev known : {0}%".format( std_dev_known )
+
     print "Average precision unknown : {0}%".format( avg_unknown_prec )
+    print "StdDev unknown : {0}%".format( std_dev_unknown )
+
     print results
 
 if __name__ == "__main__":

@@ -360,6 +360,8 @@ def remove_ambiguity_file_list(ambig_filelist, output_dir, algo):
     pool = multiprocessing.Pool()
     n = pool.map(remove_ambiguity_file_list_inner, ambig_filelist)
     n = sum(1 for x in n if x)
+    pool.close()
+    pool.join()
     print "Processed {0} files out of {1}".format(n, len(ambig_filelist))
 
 def remove_ambiguity_dir( corpus_dir, output_dir, algo ):

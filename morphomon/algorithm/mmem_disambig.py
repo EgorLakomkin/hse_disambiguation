@@ -25,7 +25,7 @@ class MMEMAlgorithm(object):
     def __init__(self, N_filter_func = N_default):
         self.filter_func = N_filter_func
         self.me = MaxentModel()
-        self.num_train_iters = 1000
+        self.num_train_iters = 50
 
     def load_memm_model(self, filename):
         self.me.load( filename  )
@@ -55,13 +55,14 @@ class MMEMAlgorithm(object):
                 yield "has preposition {0} at {1}".format(sentence[k].encode('utf-8'), k - i)
 
         #совпадение по числу.падежу, роду
-        for k in xrange( max(0, i -2 ), i ):
-            if get_gender( labels[k] ) == get_gender( labels[i] ) and get_gender( labels[i] ):
-                yield "has same gender at pos {1}".format(sentence[k].encode('utf-8'), k - i)
-            if get_case( labels[k] ) == get_case( labels[i] ) and get_case( labels[i] ):
-                yield "has same case at pos {1}".format(sentence[k].encode('utf-8'), k - i)
-            if get_number( labels[k] ) == get_number( labels[i] ) and get_number( labels[i] ):
-                yield "has same gender at pos {1}".format(sentence[k].encode('utf-8'), k - i)
+        if labels:
+            for k in xrange( max(0, i -2 ), i ):
+                if get_gender( labels[k] ) == get_gender( labels[i] ) and get_gender( labels[i] ):
+                    yield "has same gender at pos {1}".format(sentence[k].encode('utf-8'), k - i)
+                if get_case( labels[k] ) == get_case( labels[i] ) and get_case( labels[i] ):
+                    yield "has same case at pos {1}".format(sentence[k].encode('utf-8'), k - i)
+                if get_number( labels[k] ) == get_number( labels[i] ) and get_number( labels[i] ):
+                    yield "has same gender at pos {1}".format(sentence[k].encode('utf-8'), k - i)
 
 
 
@@ -229,9 +230,13 @@ class MMEMAlgorithm(object):
             viterbi_layers[i] = defaultdict(lambda: float("-inf"))
             viterbi_backpointers[i] = defaultdict(lambda: None)
             for prev_label, prev_logprob in viterbi_layers[i - 1].iteritems():
-                features = self.compute_features(sentence=words,i= i, prev_label= prev_label, analysises = analysises[i])
+                features = self.compute_features(sentence=words,i= i, prev_label= prev_label, analysises = analysises[i], labels = None)
                 features = list(features)
-                for label, prob in self.me.eval_all(features):
+                distribution =  self.me.eval_all(features)
+                distribution = dict( (label, prob) for label, prob in  distribution if label in analysises[i])
+                distribution_sum = sum( [v for v in distribution.values() ]  )
+                distribution = dict( (k, v/ distribution_sum) for k, v in distribution.items() )
+                for label, prob in distribution.items():
                     logprob = math.log(prob)
                     if prev_logprob + logprob > viterbi_layers[i][label]:
                         viterbi_layers[i][label] = prev_logprob + logprob

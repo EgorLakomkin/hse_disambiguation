@@ -7,7 +7,11 @@ import math
 from morphomon.eval import calculate_dir_precision, M_strict_mathcher, P_no_garbage
 
 __author__ = 'egor'
+<<<<<<< HEAD
 from morphomon.utils import EOS_TOKEN,get_dirs_from_config, get_word_ending, get_tokens_from_directory, dump_object, N_default, N_rnc_pos, get_tokens_from_file, load_object, get_corpus_files, remove_ambiguity_dir,  N_rnc_positional_microsubset, remove_directory_content, remove_ambiguity_file_list, N_rnc_positional_modified_tagset
+=======
+from morphomon.utils import EOS_TOKEN, get_word_ending, get_tokens_from_directory, dump_object, N_default, N_rnc_pos, get_tokens_from_file, load_object, get_corpus_files, remove_ambiguity_dir,  N_rnc_positional_microsubset, remove_directory_content, remove_ambiguity_file_list, N_rnc_positional_modified_tagset, split_seq, flatten, OuterPool
+>>>>>>> origin/master
 from collections import defaultdict
 
 
@@ -85,30 +89,44 @@ class NaiveAlgorithm(object):
             sentence.append( (token[0].word, token) )
         out_f.close()
 
+_NAIVE_CV_GLOBALS = None
+
+def naive_cross_validate_inner(i):
+    corpus_dir, algo_dir, morph_analysis_dir, N_func, error_dir, num_iters, corpus_files, splits = _NAIVE_CV_GLOBALS
+
+    remove_directory_content(algo_dir)
+    print "Starting {0} fold".format( i )
+    train_fold_corpus_files = flatten(splits[j] for j in range(num_iters) if i != j)
+    test_corpus_files = flatten(splits[j] for j in range(num_iters) if i == j)
+    naive_algo = NaiveAlgorithm(N_func=N_func)
+    naive_algo.train_from_filelist( train_fold_corpus_files )
+    print "Finished training. Starting testing phase!"
+    morph_analysis_files = [ os.path.join( morph_analysis_dir, os.path.basename( test_file ) ) for test_file in test_corpus_files if os.path.exists( os.path.join( morph_analysis_dir, os.path.basename( test_file ) ) )]
+    remove_ambiguity_file_list(ambig_filelist=morph_analysis_files, output_dir= algo_dir, algo =naive_algo )
+    print "Finished working of algo. Starting measuring phase"
+    total_correct_known, total_correct_unknown, total_known, total_unknown, upper_bound = calculate_dir_precision( algo_dir = algo_dir, ambi_dir= morph_analysis_dir, gold_dir =  corpus_dir, M = M_strict_mathcher, N =  N_func, P = P_no_garbage,
+        errors_context_filename = os.path.join(error_dir, "naive_errors_context_{0}.txt".format( i )),
+        errors_statistics_filename = os.path.join(error_dir, "naive_errors_statistics_{0}.txt".format( i )) )
+    
+    return (total_correct_known, total_correct_unknown, total_known, total_unknown, upper_bound)
+
 
 def naive_cross_validate(corpus_dir, algo_dir, morph_analysis_dir, N_func, error_dir):
+    global _NAIVE_CV_GLOBALS
 
-    corpus_files = get_corpus_files(corpus_dir)
-
-    results = []
     num_iters = 5
-    for i in range(1, num_iters + 1):
-        shuffle( corpus_files )
-        remove_directory_content(algo_dir)
-        print "Starting {0} fold".format( i )
-        train_fold_corpus_files = corpus_files[:len(corpus_files)*4/5]
-        test_corpus_files = corpus_files[len(corpus_files)*4/5:]
-        naive_algo = NaiveAlgorithm(N_func=N_func)
-        naive_algo.train_from_filelist( train_fold_corpus_files )
-        print "Finished training. Starting testing phase!"
-        morph_analysis_files = [ os.path.join( morph_analysis_dir, os.path.basename( test_file ) ) for test_file in test_corpus_files if os.path.exists( os.path.join( morph_analysis_dir, os.path.basename( test_file ) ) )]
-        remove_ambiguity_file_list(ambig_filelist=morph_analysis_files, output_dir= algo_dir, algo =naive_algo )
-        print "Finished working of algo. Starting measuring phase"
-        total_correct_known, total_correct_unknown, total_known, total_unknown, upper_bound = calculate_dir_precision( algo_dir = algo_dir, ambi_dir= morph_analysis_dir, gold_dir =  corpus_dir, M = M_strict_mathcher, N =  N_func, P = P_no_garbage,
-            errors_context_filename = os.path.join(error_dir, "naive_errors_context_{0}.txt".format( i )),
-            errors_statistics_filename = os.path.join(error_dir, "naive_errors_statistics_{0}.txt".format( i )) )
-        results.append((total_correct_known, total_correct_unknown, total_known, total_unknown,upper_bound ) )
+    corpus_files = get_corpus_files(corpus_dir)
+    shuffle(corpus_files)
+    splits = split_seq(corpus_files, num_iters)
 
+    _NAIVE_CV_GLOBALS = [ corpus_dir, algo_dir, morph_analysis_dir, N_func, error_dir, num_iters, corpus_files, splits ]
+
+    pool = OuterPool()
+    results = pool.map(naive_cross_validate_inner, range(num_iters))
+    pool.close()
+    pool.join()
+
+    # TODO: Check for ZeroDivisionError here.
     avg_prec = sum([(result[0]+result[1])*100.0/(result[2] + result[3]) for result in results])  / len( results )
     std_dev = math.sqrt( sum([ ((result[0]+result[1])*100.0/(result[2] + result[3])- avg_prec)* ((result[0]+result[1])*100.0/(result[2] + result[3]) - avg_prec) for result in results ] )  / num_iters )
 

@@ -8,6 +8,34 @@ import re
 import sys
 import multiprocessing
 
+def split_seq(seq, p):
+    newseq = []
+    n = len(seq) / p
+    r = len(seq) % p
+    b,e = 0, n + min(1, r)
+    for i in range(p):
+        newseq.append(seq[b:e])
+        r = max(0, r-1)
+        b,e = e, e + n + min(1, r)
+
+    return newseq
+
+def flatten(seq):
+    return list(y for x in seq for y in x)
+
+# From http://stackoverflow.com/questions/6974695/python-process-pool-non-daemonic
+class NonDaemonicProcess(multiprocessing.Process):
+    def _get_daemon(self):
+        return False
+    def _set_daemon(self, value):
+        pass
+
+    daemon = property(_get_daemon, _set_daemon)
+
+# We sub-class multiprocessing.pool.Pool instead of multiprocessing.Pool
+# because the latter is only a wrapper function, not a proper class.
+class OuterPool(multiprocessing.pool.Pool):
+    Process = NonDaemonicProcess
 
 def get_word_ending(word, enging_length = 3):
     ending = word[-enging_length:]
@@ -325,13 +353,11 @@ def remove_directory_content(folder):
         except Exception, e:
             print e
 
-_RA_OUTPUT = None
-_RA_ALGO = None
+_RA_GLOBALS = None
+
 def remove_ambiguity_file_list_inner(ambig_file):
-    global _RA_OUTPUT
-    global _RA_ALGO
-    output_dir = _RA_OUTPUT
-    algo = _RA_ALGO
+    output_dir, algo = _RA_GLOBALS
+
     print "Starting removing ambiguity for file", ambig_file
     out_file = os.path.join( output_dir, os.path.basename( ambig_file ) )
 
@@ -344,13 +370,13 @@ def remove_ambiguity_file_list_inner(ambig_file):
     return True
 
 def remove_ambiguity_file_list(ambig_filelist, output_dir, algo):
-    global _RA_OUTPUT
-    global _RA_ALGO
-    _RA_OUTPUT = output_dir
-    _RA_ALGO = algo
-    pool = multiprocessing.Pool()
+    global _RA_GLOBALS
+    _RA_GLOBALS = [ output_dir, algo ]
+    pool = multiprocessing.Pool(3)
     n = pool.map(remove_ambiguity_file_list_inner, ambig_filelist)
     n = sum(1 for x in n if x)
+    pool.close()
+    pool.join()
     print "Processed {0} files out of {1}".format(n, len(ambig_filelist))
 
 def remove_ambiguity_dir( corpus_dir, output_dir, algo ):

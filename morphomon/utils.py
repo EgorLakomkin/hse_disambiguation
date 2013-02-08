@@ -5,6 +5,7 @@ import os
 import pickle
 import re
 import sys
+import multiprocessing
 
 
 def get_word_ending(word, enging_length = 3):
@@ -321,23 +322,22 @@ def remove_directory_content(folder):
             print e
 
 def remove_ambiguity_file_list(ambig_filelist, output_dir, algo):
-    num = 0
-    for ambig_file in ambig_filelist:
+    def _inner_(ambig_file):
         print "Starting removing ambiguity for file", ambig_file
-
         out_file = os.path.join( output_dir, os.path.basename( ambig_file ) )
 
         if os.path.exists( out_file ):
             print "Skipping file {0}".format( ambig_file )
-            num +=1
-            continue
-
+            return False
 
         algo.remove_ambiguity_file( ambig_file, out_file )
+        print "Finishing removing ambiguity for file", ambig_file
+        return True
 
-        num+=1
-        print "{0} file processed. {1}%".format(ambig_file, num/(len(ambig_filelist)+0.0)*100 )
-
+    pool = multiprocessing.Pool()
+    n = pool.map(_inner_, ambig_filelist)
+    n = sum(1 for x in n if x)
+    print "Processed {0} files out of {1}".format(n, len(ambig_filelist))
 
 def remove_ambiguity_dir( corpus_dir, output_dir, algo ):
     corpus_files = get_corpus_files(corpus_dir)

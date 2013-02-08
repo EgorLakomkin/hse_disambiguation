@@ -88,7 +88,7 @@ class NaiveAlgorithm(object):
 _NAIVE_CV_GLOBALS = None
 
 def naive_cross_validate_inner(i):
-    corpus_dir, algo_dir, morph_analysis_dir, N_func, error_dir, corpus_files, splits = _NAIVE_CV_GLOBALS
+    corpus_dir, algo_dir, morph_analysis_dir, N_func, error_dir, num_iters, corpus_files, splits = _NAIVE_CV_GLOBALS
 
     remove_directory_content(algo_dir)
     print "Starting {0} fold".format( i )
@@ -115,7 +115,7 @@ def naive_cross_validate(corpus_dir, algo_dir, morph_analysis_dir, N_func, error
     shuffle(corpus_files)
     splits = split_seq(corpus_files, num_iters)
 
-    _NAIVE_CV_GLOBALS = [ corpus_dir, algo_dir, morph_analysis_dir, N_func, error_dir, corpus_files, splits ]
+    _NAIVE_CV_GLOBALS = [ corpus_dir, algo_dir, morph_analysis_dir, N_func, error_dir, num_iters, corpus_files, splits ]
 
     pool = multiprocessing.Pool()
     results = pool.map(naive_cross_validate_inner, range(num_iters))

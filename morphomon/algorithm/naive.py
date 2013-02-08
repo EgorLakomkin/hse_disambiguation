@@ -111,7 +111,8 @@ def naive_cross_validate(corpus_dir, algo_dir, morph_analysis_dir, N_func, error
     global _NAIVE_CV_GLOBALS
 
     num_iters = 5
-    corpus_files = shuffle(get_corpus_files(corpus_dir))
+    corpus_files = get_corpus_files(corpus_dir)
+    shuffle(corpus_files)
     splits = split_seq(corpus_files, num_iters)
 
     _NAIVE_CV_GLOBALS = [ corpus_dir, algo_dir, morph_analysis_dir, N_func, error_dir, corpus_files, splits ]

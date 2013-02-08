@@ -107,13 +107,20 @@ def naive_cross_validate(corpus_dir, algo_dir, morph_analysis_dir, N_func):
             errors_context_filename = r"/home/egor/disamb_test/naive_errors_context_{0}.txt".format( i ),
             errors_statistics_filename = r"/home/egor/disamb_test/naive_errors_statistics_{0}.txt".format( i ))
         results.append((total_correct_known, total_correct_unknown, total_known, total_unknown,upper_bound ) )
-    avg_known_prec = sum([result[0] for result in results]) * 100.0 / sum([result[2] for result in results])
-    avg_unknown_prec = sum([result[1] for result in results]) * 100.0 / sum([result[3] for result in results])
-    std_dev_known = math.sqrt( sum([ (float(result[0])/result[2]*100.0 - avg_known_prec)* (float(result[0])/result[2]*100.0 - avg_known_prec) for result in results ] )  / num_iters )
-    std_dev_unknown = math.sqrt( sum([ (float(result[1])/result[3]*100.0 -avg_unknown_prec)* (float(result[1])/result[3]*100.0 - avg_unknown_prec )  for result in results ]  )  / num_iters )
-    avg_upper_bound = sum([result[4] for result in results]) * 100.0 / sum([result[2]+result[3] for result in results])
 
-    stdev_upper_bound = math.sqrt( sum([ (float(result[4])/(result[2] + result[3])*100.0 - avg_upper_bound)* (float(result[4])/(result[2] + result[3])*100.0 - avg_unknown_prec )  for result in results ]  )  / num_iters )
+    avg_prec = sum([(result[0]+result[1])*100.0/(result[2] + result[3]) for result in results])  / len( results )
+    std_dev = math.sqrt( sum([ ((result[0]+result[1])*100.0/(result[2] + result[3])- avg_prec)* ((result[0]+result[1])*100.0/(result[2] + result[3]) - avg_prec) for result in results ] )  / num_iters )
+
+    avg_known_prec = sum([result[0]*100.0/result[2] for result in results])  / len( results )
+    avg_unknown_prec = sum([result[1]*100.0/result[3] for result in results])  / len( results )
+    std_dev_known = math.sqrt( sum([ (result[0]*100.0/result[2]- avg_known_prec)* (result[0]*100.0/result[2] - avg_known_prec) for result in results ] )  / num_iters )
+    std_dev_unknown = math.sqrt( sum([ (result[1]*100.0/result[3]- avg_unknown_prec)* (result[1]*100.0/result[3] - avg_unknown_prec) for result in results ] )  / num_iters )
+    avg_upper_bound = sum([result[4]*100.0/(result[2]+result[3]) for result in results])  / len( results )
+
+    stdev_upper_bound = math.sqrt( sum([ (result[4]*100.0/(result[2]+result[3]) - avg_upper_bound)* (result[4]*100.0/(result[2]+result[3]) - avg_upper_bound )  for result in results ]  )  / num_iters )
+
+    print "Total Average precision  : {0}%".format( avg_prec )
+    print "Total StdDev  : {0}%".format( std_dev)
 
     print "Average precision known : {0}%".format( avg_known_prec )
     print "StdDev known : {0}%".format( std_dev_known )

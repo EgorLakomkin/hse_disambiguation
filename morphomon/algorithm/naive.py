@@ -8,11 +8,7 @@ from morphomon.eval import calculate_dir_precision, M_strict_mathcher, P_no_garb
 import multiprocessing
 
 __author__ = 'egor'
-<<<<<<< HEAD
-from morphomon.utils import EOS_TOKEN,get_dirs_from_config, get_word_ending, get_tokens_from_directory, dump_object, N_default, N_rnc_pos, get_tokens_from_file, load_object, get_corpus_files, remove_ambiguity_dir,  N_rnc_positional_microsubset, remove_directory_content, remove_ambiguity_file_list, N_rnc_positional_modified_tagset
-=======
-from morphomon.utils import EOS_TOKEN, get_word_ending, get_tokens_from_directory, dump_object, N_default, N_rnc_pos, get_tokens_from_file, load_object, get_corpus_files, remove_ambiguity_dir,  N_rnc_positional_microsubset, remove_directory_content, remove_ambiguity_file_list, N_rnc_positional_modified_tagset, split_seq, flatten, OuterPool
->>>>>>> origin/master
+from morphomon.utils import EOS_TOKEN, get_word_ending, get_tokens_from_directory, dump_object, N_default, N_rnc_pos, get_tokens_from_file, load_object, get_corpus_files, remove_ambiguity_dir,  N_rnc_positional_microsubset, remove_directory_content, remove_ambiguity_file_list, N_rnc_positional_modified_tagset, split_seq, flatten
 from collections import defaultdict
 
 

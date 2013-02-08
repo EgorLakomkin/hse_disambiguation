@@ -316,6 +316,7 @@ def cross_validate(algo_name, corpus_dir, algo_dir, morph_analysis_dir, N_func, 
 
     print "StdDev upperbound : {0}%".format( stdev_upper_bound )
 
+    print "Finished {0} algorithm with {1} tagset".format( algo_name, N_func )
     print results
 
 

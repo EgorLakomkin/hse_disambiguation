@@ -85,7 +85,7 @@ class NaiveAlgorithm(object):
         out_f.close()
 
 
-def naive_cross_validate(corpus_dir, algo_dir, morph_analysis_dir, N_func):
+def naive_cross_validate(corpus_dir, algo_dir, morph_analysis_dir, N_func, error_dir):
 
     corpus_files = get_corpus_files(corpus_dir)
 
@@ -104,8 +104,8 @@ def naive_cross_validate(corpus_dir, algo_dir, morph_analysis_dir, N_func):
         remove_ambiguity_file_list(ambig_filelist=morph_analysis_files, output_dir= algo_dir, algo =naive_algo )
         print "Finished working of algo. Starting measuring phase"
         total_correct_known, total_correct_unknown, total_known, total_unknown, upper_bound = calculate_dir_precision( algo_dir = algo_dir, ambi_dir= morph_analysis_dir, gold_dir =  corpus_dir, M = M_strict_mathcher, N =  N_func, P = P_no_garbage,
-            errors_context_filename = r"/home/egor/disamb_test/naive_errors_context_{0}.txt".format( i ),
-            errors_statistics_filename = r"/home/egor/disamb_test/naive_errors_statistics_{0}.txt".format( i ))
+            errors_context_filename = os.path.join(error_dir, "naive_errors_context_{0}.txt".format( i )),
+            errors_statistics_filename = os.path.join(error_dir, "naive_errors_statistics_{0}.txt".format( i )) )
         results.append((total_correct_known, total_correct_unknown, total_known, total_unknown,upper_bound ) )
 
     avg_prec = sum([(result[0]+result[1])*100.0/(result[2] + result[3]) for result in results])  / len( results )
@@ -145,6 +145,7 @@ if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument('-cfg', '--config')
+    parser.add_argument('-err', '--error')
     args = parser.parse_args()
     config = ConfigParser.RawConfigParser()
     config.read( args.config )
@@ -154,4 +155,4 @@ if __name__ == "__main__":
     algo_dir = config.get( "dir", "algo_dir" )
 
 
-    naive_cross_validate( corpus_dir =gold_dir, algo_dir=  algo_dir , morph_analysis_dir=ambig_dir, N_func = N_rnc_pos )
+    naive_cross_validate( corpus_dir =gold_dir, algo_dir=  algo_dir , morph_analysis_dir=ambig_dir, N_func = N_rnc_pos, error_dir = args.error )

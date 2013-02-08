@@ -432,6 +432,6 @@ def get_dirs_from_config( cfg_file ):
     return gold_dir, ambig_dir, algo_dir
 
 tag_set_name_N = {'pos' : N_rnc_pos, 'base_tags' : N_rnc_positional_microsubset,
-                  'new_pos' : N_pymorphy_tagset_POS, 'new_pos_base_tags' : N_rnc_positional_modified_pos }
+                  'new_pos' : N_rnc_positional_modified_pos, 'new_base_tags' : N_rnc_positional_modified_tagset }
 
 

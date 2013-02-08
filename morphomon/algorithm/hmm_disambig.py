@@ -2,7 +2,7 @@
 import codecs
 from collections import defaultdict
 from morphomon.algorithm.statistics import train_A_corpus, train_B_corpus, train_A_corpus_lst_files, train_B_lst_files
-from morphomon.utils import get_word_ending, N_default, get_tokens_from_file, EOS_TOKEN, N_rnc_pos, remove_ambiguity_dir,  dump_object, N_rnc_positional_microsubset, N_rnc_positional, remove_ambiguity_file_list, remove_directory_content, get_corpus_files, N_rnc_positional_modified_tagset, get_dirs_from_config
+from morphomon.utils import get_word_ending, N_default, get_tokens_from_file, EOS_TOKEN
 
 __author__ = 'egor'
 

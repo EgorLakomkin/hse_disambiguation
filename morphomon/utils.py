@@ -33,6 +33,8 @@ token_pattern = ur'^(?P<token_name>.*?)\t(?P<token_lemma>.*?)=(?P<token_gram>.*)
 EOS_TOKEN = TokenRecord(word='',lemma='',gram='EOS')
 
 
+
+
 pymorphy_coverter = dict()
 pymorphy_coverter[u'с'] = "s"
 pymorphy_coverter[u'п'] = "a"
@@ -176,6 +178,7 @@ filter_tags = ['norm','bastard']
 
 used_micro_tag_subset = [ pos_tag, gender_tags, number_tags, case_tags, person_tags,time_tags, naklon_tags ]
 used_modified_tag_subset = [ pos_tag, gender_tags, number_tags, case_tags, person_tags,time_tags, naklon_tags ]
+
 
 def get_pos(positiona_tag_set):
     tag_set = positiona_tag_set.split(',')
@@ -428,6 +431,7 @@ def get_dirs_from_config( cfg_file ):
     algo_dir = config.get( "dir", "algo_dir" )
     return gold_dir, ambig_dir, algo_dir
 
-if __name__ == "__main__":    
-    pluratives = get_corpora_pluratives(corpus_dir= r"/home/egor/disamb_test/gold/" )
-    
+tag_set_name_N = {'pos' : N_rnc_pos, 'base_tags' : N_rnc_positional_microsubset,
+                  'new_pos' : N_pymorphy_tagset_POS, 'new_pos_base_tags' : N_rnc_positional_modified_pos }
+
+

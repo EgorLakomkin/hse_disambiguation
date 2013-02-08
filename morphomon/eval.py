@@ -9,7 +9,7 @@ import math
 from morphomon.algorithm.hmm_disambig import HMMAlgorithm
 from morphomon.algorithm.mmem_disambig import MMEMAlgorithm
 from morphomon.algorithm.naive import NaiveAlgorithm
-from morphomon.utils import N_rnc_pos, get_corpus_files, get_diff_between_tokens, parse_token, EOS_TOKEN, split_seq, remove_directory_content, flatten, remove_ambiguity_file_list, get_dirs_from_config
+from morphomon.utils import N_rnc_pos, get_corpus_files, get_diff_between_tokens, parse_token, EOS_TOKEN, split_seq, remove_directory_content, flatten, remove_ambiguity_file_list, get_dirs_from_config, tag_set_name_N
 
 __author__ = 'egor'
 
@@ -326,10 +326,16 @@ if __name__=="__main__":
     parser.add_argument('-cfg', '--config')
     parser.add_argument('-err', '--error')
     parser.add_argument('-alg','--algorithm')
+    parser.add_argument('-gold_dir','--gold_dir')
+    parser.add_argument('-algo_dir','--algo_dir')
+    parser.add_argument('-morph_dir','--morph_dir')
+    parser.add_argument('-tag_type','--tag_type')
+
     args = parser.parse_args()
 
-    gold_dir, ambig_dir, algo_dir = get_dirs_from_config( args.config )
+    gold_dir, ambig_dir, algo_dir = args.gold_dir, args.morph_dir, args.algo_dir
+    tag_type = args.tag_type
 
     algo_name = args.algorithm
     cross_validate(algo_name= algo_name, corpus_dir = gold_dir,
-        algo_dir= algo_dir, morph_analysis_dir= ambig_dir, N_func = N_rnc_pos, error_dir = args.error)
+        algo_dir= algo_dir, morph_analysis_dir= ambig_dir, N_func = tag_set_name_N.get( tag_type ), error_dir = args.error)

@@ -324,13 +324,11 @@ def remove_directory_content(folder):
         except Exception, e:
             print e
 
-_RA_OUTPUT = None
-_RA_ALGO = None
+_RA_GLOBALS = None
+
 def remove_ambiguity_file_list_inner(ambig_file):
-    global _RA_OUTPUT
-    global _RA_ALGO
-    output_dir = _RA_OUTPUT
-    algo = _RA_ALGO
+    output_dir, algo = _RA_GLOBALS
+
     print "Starting removing ambiguity for file", ambig_file
     out_file = os.path.join( output_dir, os.path.basename( ambig_file ) )
 
@@ -343,10 +341,8 @@ def remove_ambiguity_file_list_inner(ambig_file):
     return True
 
 def remove_ambiguity_file_list(ambig_filelist, output_dir, algo):
-    global _RA_OUTPUT
-    global _RA_ALGO
-    _RA_OUTPUT = output_dir
-    _RA_ALGO = algo
+    global _RA_GLOBALS
+    _RA_GLOBALS = [ output_dir, algo ]
     pool = multiprocessing.Pool()
     n = pool.map(remove_ambiguity_file_list_inner, ambig_filelist)
     n = sum(1 for x in n if x)

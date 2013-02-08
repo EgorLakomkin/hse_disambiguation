@@ -5,10 +5,9 @@ from random import choice, shuffle
 import sys
 import math
 from morphomon.eval import calculate_dir_precision, M_strict_mathcher, P_no_garbage
-import multiprocessing
 
 __author__ = 'egor'
-from morphomon.utils import EOS_TOKEN, get_word_ending, get_tokens_from_directory, dump_object, N_default, N_rnc_pos, get_tokens_from_file, load_object, get_corpus_files, remove_ambiguity_dir,  N_rnc_positional_microsubset, remove_directory_content, remove_ambiguity_file_list, N_rnc_positional_modified_tagset, split_seq, flatten
+from morphomon.utils import EOS_TOKEN, get_word_ending, get_tokens_from_directory, dump_object, N_default, N_rnc_pos, get_tokens_from_file, load_object, get_corpus_files, remove_ambiguity_dir,  N_rnc_positional_microsubset, remove_directory_content, remove_ambiguity_file_list, N_rnc_positional_modified_tagset, split_seq, flatten, OuterPool
 from collections import defaultdict
 
 
@@ -117,7 +116,7 @@ def naive_cross_validate(corpus_dir, algo_dir, morph_analysis_dir, N_func, error
 
     _NAIVE_CV_GLOBALS = [ corpus_dir, algo_dir, morph_analysis_dir, N_func, error_dir, num_iters, corpus_files, splits ]
 
-    pool = multiprocessing.Pool()
+    pool = OuterPool()
     results = pool.map(naive_cross_validate_inner, range(num_iters))
     pool.close()
     pool.join()

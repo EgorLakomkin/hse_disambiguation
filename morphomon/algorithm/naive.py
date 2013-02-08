@@ -7,7 +7,7 @@ import math
 from morphomon.eval import calculate_dir_precision, M_strict_mathcher, P_no_garbage
 
 __author__ = 'egor'
-from morphomon.utils import EOS_TOKEN, get_word_ending, get_tokens_from_directory, dump_object, N_default, N_rnc_pos, get_tokens_from_file, load_object, get_corpus_files, remove_ambiguity_dir,  N_rnc_positional_microsubset, remove_directory_content, remove_ambiguity_file_list, N_rnc_positional_modified_tagset
+from morphomon.utils import EOS_TOKEN, get_word_ending, get_tokens_from_directory, dump_object, N_default, N_rnc_pos, get_tokens_from_file, load_object, get_corpus_files, remove_ambiguity_dir,  N_rnc_positional_microsubset, remove_directory_content, remove_ambiguity_file_list, N_rnc_positional_modified_tagset, split_seq, flatten
 from collections import defaultdict
 
 
@@ -84,19 +84,18 @@ class NaiveAlgorithm(object):
             sentence.append( (token[0].word, token) )
         out_f.close()
 
-
 def naive_cross_validate(corpus_dir, algo_dir, morph_analysis_dir, N_func, error_dir):
-
-    corpus_files = get_corpus_files(corpus_dir)
+    num_iters = 5
+    corpus_files = shuffle(get_corpus_files(corpus_dir))
+    splits = split_seq(corpus_files, num_iters)
 
     results = []
-    num_iters = 5
+
     for i in range(1, num_iters + 1):
-        shuffle( corpus_files )
         remove_directory_content(algo_dir)
         print "Starting {0} fold".format( i )
-        train_fold_corpus_files = corpus_files[:len(corpus_files)*4/5]
-        test_corpus_files = corpus_files[len(corpus_files)*4/5:]
+        train_fold_corpus_files = flatten(splits[j] for j in range(num_iters) if i != j)
+        test_corpus_files = flatten(splits[j] for j in range(num_iters) if i == j)
         naive_algo = NaiveAlgorithm(N_func=N_func)
         naive_algo.train_from_filelist( train_fold_corpus_files )
         print "Finished training. Starting testing phase!"

@@ -7,6 +7,20 @@ import re
 import sys
 import multiprocessing
 
+def split_seq(seq, p):
+    newseq = []
+    n = len(seq) / p
+    r = len(seq) % p
+    b,e = 0, n + min(1, r)
+    for i in range(p):
+        newseq.append(seq[b:e])
+        r = max(0, r-1)
+        b,e = e, e + n + min(1, r)
+
+    return newseq
+
+def flatten(seq):
+    return list(y for x in seq for y in x)
 
 def get_word_ending(word, enging_length = 3):
     ending = word[-enging_length:]

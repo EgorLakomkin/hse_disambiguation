@@ -6,7 +6,7 @@ from random import shuffle
 import math
 from morphomon.algorithm.statistics import calculate_B, calculate_A, train_A_corpus, train_B_corpus, train_A_corpus_lst_files, train_B_lst_files
 from morphomon.eval import calculate_dir_precision, P_no_garbage, M_strict_mathcher
-from morphomon.utils import get_word_ending, TokenRecord, N_default, load_object, get_tokens_from_file, EOS_TOKEN, N_rnc_pos, remove_ambiguity_dir,  dump_object, N_rnc_positional_microsubset, N_rnc_positional, remove_ambiguity_file_list, remove_directory_content, get_corpus_files, N_rnc_positional_modified_tagset
+from morphomon.utils import get_word_ending, TokenRecord, N_default, load_object, get_tokens_from_file, EOS_TOKEN, N_rnc_pos, remove_ambiguity_dir,  dump_object, N_rnc_positional_microsubset, N_rnc_positional, remove_ambiguity_file_list, remove_directory_content, get_corpus_files, N_rnc_positional_modified_tagset, get_dirs_from_config
 
 __author__ = 'egor'
 
@@ -125,7 +125,7 @@ class HMMAlgorithm(object):
 
         return zip(word_forms,path[::-1])
 
-def hmm_cross_validate(corpus_dir, algo_dir, morph_analysis_dir, N_func):
+def hmm_cross_validate(corpus_dir, algo_dir, morph_analysis_dir, N_func, error_dir):
 
     corpus_files = get_corpus_files(corpus_dir)
 
@@ -144,8 +144,8 @@ def hmm_cross_validate(corpus_dir, algo_dir, morph_analysis_dir, N_func):
         remove_ambiguity_file_list(ambig_filelist=morph_analysis_files, output_dir= algo_dir, algo =hmm_algo )
         print "Finished working of algo. Starting measuring phase"
         total_correct_known, total_correct_unknown, total_known, total_unknown, upper_bound  = calculate_dir_precision( algo_dir = algo_dir, ambi_dir= morph_analysis_dir, gold_dir =  corpus_dir, M = M_strict_mathcher, N =  N_func, P = P_no_garbage,
-            errors_context_filename = r"/home/egor/disamb_test/hmm_errors_context_{0}.txt".format( i ),
-            errors_statistics_filename = r"/home/egor/disamb_test/hmm_errors_statistics_{0}.txt".format( i ))
+            errors_context_filename = os.path.join(error_dir,"hmm_errors_context_{0}.txt".format( i ) ),
+            errors_statistics_filename = os.path.join(error_dir,"hmm_errors_statistics_{0}.txt".format( i )) )
         results.append((total_correct_known, total_correct_unknown, total_known, total_unknown, upper_bound  ) )
 
     avg_prec = sum([(result[0]+result[1])*100.0/(result[2] + result[3]) for result in results])  / len( results )
@@ -182,18 +182,13 @@ if __name__=="__main__":
     #hmm_algo = load_object( r"/home/egor/disamb_test/hmm_base_tags.dat"  )
     #remove_ambiguity_dir(corpus_dir = r"/home/egor/disamb_test/test_ambig",output_dir = r"/home/egor/disamb_test/test_hmm_base_tags", algo = hmm_algo )
 
-    import ConfigParser
-
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument('-cfg', '--config')
+    parser.add_argument('-err', '--error')
     args = parser.parse_args()
-    config = ConfigParser.RawConfigParser()
-    config.read( args.config )
 
-    gold_dir = config.get( "dir", "gold_dir" )
-    ambig_dir = config.get( "dir", "morph_analysis_dir" )
-    algo_dir = config.get( "dir", "algo_dir" )
+    gold_dir, ambig_dir, algo_dir = get_dirs_from_config( args.config )
 
     hmm_cross_validate( corpus_dir = gold_dir, algo_dir= algo_dir,
-        morph_analysis_dir=ambig_dir, N_func = N_rnc_pos )
+        morph_analysis_dir=ambig_dir, N_func = N_rnc_pos, error_dir = args.error )

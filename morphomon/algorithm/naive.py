@@ -7,7 +7,7 @@ import math
 from morphomon.eval import calculate_dir_precision, M_strict_mathcher, P_no_garbage
 
 __author__ = 'egor'
-from morphomon.utils import EOS_TOKEN, get_word_ending, get_tokens_from_directory, dump_object, N_default, N_rnc_pos, get_tokens_from_file, load_object, get_corpus_files, remove_ambiguity_dir,  N_rnc_positional_microsubset, remove_directory_content, remove_ambiguity_file_list, N_rnc_positional_modified_tagset
+from morphomon.utils import EOS_TOKEN,get_dirs_from_config, get_word_ending, get_tokens_from_directory, dump_object, N_default, N_rnc_pos, get_tokens_from_file, load_object, get_corpus_files, remove_ambiguity_dir,  N_rnc_positional_microsubset, remove_directory_content, remove_ambiguity_file_list, N_rnc_positional_modified_tagset
 from collections import defaultdict
 
 
@@ -22,10 +22,11 @@ class NaiveAlgorithm(object):
         if corpus_dir is not None:
             for token in get_tokens_from_directory( corpus_dir, N_filter_func = self.filter_func ):
                 if token != [EOS_TOKEN]:
-                    if len(token) > 1:
-                       print "Ambiguity in corpus"
-                       print "Pick random token"
-                    token = choice(token)
+                    #if len(token) > 1:
+                    #   print "Ambiguity in corpus"
+                    #   print "Pick random token"
+                    
+		    token = choice(token)
                     token_word = token.word
                     token_word_ending = get_word_ending( token_word )
                     token_gram = token.gram
@@ -140,19 +141,14 @@ if __name__ == "__main__":
     #naive_algo = load_object( r"/home/egor/disamb_test/naive_positional_full.dat" )
     #naive_algo.remove_ambiguity_file(r"C:\disamb_test\mystem_txt\_rbk2_2140.txt", r"C:\disamb_test\algo_output\_rbk2_2140.txt" )
     #remove_ambiguity_dir(corpus_dir = r"/home/egor/disamb_test/mystem_txt",output_dir = r"/home/egor/disamb_test/naive_full_tag_output", algo = naive_algo )
-    import ConfigParser
 
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument('-cfg', '--config')
     parser.add_argument('-err', '--error')
     args = parser.parse_args()
-    config = ConfigParser.RawConfigParser()
-    config.read( args.config )
 
-    gold_dir = config.get( "dir", "gold_dir" )
-    ambig_dir = config.get( "dir", "morph_analysis_dir" )
-    algo_dir = config.get( "dir", "algo_dir" )
+    gold_dir, ambig_dir, algo_dir = get_dirs_from_config( args.config )
 
 
     naive_cross_validate( corpus_dir =gold_dir, algo_dir=  algo_dir , morph_analysis_dir=ambig_dir, N_func = N_rnc_pos, error_dir = args.error )

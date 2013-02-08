@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import ConfigParser
 import codecs
 from collections import namedtuple
 import os
@@ -127,7 +128,7 @@ def N_rnc_pos(tag_set):
     if token_grams[0] in pos_tag:
         return token_grams[0]
     else:
-        print >>sys.stderr, u"No pos tag was found in tagset : {0}. Treat as S".format( tag_set )
+        #print >>sys.stderr, u"No pos tag was found in tagset : {0}. Treat as S".format( tag_set )
         return 's'
 
 
@@ -409,6 +410,15 @@ def get_corpora_pluratives(corpus_dir):
             pluratives.add( token[0].lemma.lower() )
     #preps = [prep.encode('utf-8') for prep in preps]
     return pluratives
+
+def get_dirs_from_config( cfg_file ):
+    config = ConfigParser.RawConfigParser()
+    config.read( cfg_file )
+
+    gold_dir = config.get( "dir", "gold_dir" )
+    ambig_dir = config.get( "dir", "morph_analysis_dir" )
+    algo_dir = config.get( "dir", "algo_dir" )
+    return gold_dir, ambig_dir, algo_dir
 
 if __name__ == "__main__":    
     pluratives = get_corpora_pluratives(corpus_dir= r"/home/egor/disamb_test/gold/" )

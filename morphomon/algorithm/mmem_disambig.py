@@ -8,7 +8,7 @@ import maxent
 import sys
 from morphomon.algorithm.statistics import train_B_corpus
 from morphomon.eval import calculate_dir_precision, M_strict_mathcher, P_no_garbage
-from morphomon.utils import N_rnc_pos, dump_object, get_tokens_from_file, EOS_TOKEN, get_tokens_from_directory, N_default, load_object, remove_ambiguity_dir, get_word_ending, N_rnc_positional, pos_tagset, N_rnc_positional_microsubset, get_corpus_files, remove_directory_content, remove_ambiguity_file_list, N_rnc_positional_modified_tagset, get_gender, get_case, get_number
+from morphomon.utils import N_rnc_pos, dump_object, get_tokens_from_file, EOS_TOKEN, get_tokens_from_directory, N_default, load_object, remove_ambiguity_dir, get_word_ending, N_rnc_positional, pos_tagset, N_rnc_positional_microsubset, get_corpus_files, remove_directory_content, remove_ambiguity_file_list, N_rnc_positional_modified_tagset, get_gender, get_case, get_number, get_dirs_from_config
 from maxent import MaxentModel
 
 __author__ = 'egor'
@@ -262,7 +262,7 @@ class MMEMAlgorithm(object):
 
         return zip(words,path)
 
-def memm_cross_validate(corpus_dir, algo_dir, morph_analysis_dir, N_func, P):
+def memm_cross_validate(corpus_dir, algo_dir, morph_analysis_dir, N_func, P, error_dir):
 
     corpus_files = get_corpus_files(corpus_dir)
 
@@ -287,8 +287,8 @@ def memm_cross_validate(corpus_dir, algo_dir, morph_analysis_dir, N_func, P):
         remove_ambiguity_file_list(ambig_filelist=morph_analysis_files_test, output_dir= algo_dir, algo = memm_algo )
         print "Finished working of algo. Starting measuring phase"
         total_correct_known, total_correct_unknown, total_known, total_unknown, upper_bound  = calculate_dir_precision( algo_dir = algo_dir, ambi_dir= morph_analysis_dir, gold_dir =  corpus_dir, M = M_strict_mathcher, N =  N_func, P = P_no_garbage,
-            errors_context_filename = r"/home/egor/disamb_test/hmm_errors_context_{0}.txt".format( i ),
-            errors_statistics_filename = r"/home/egor/disamb_test/hmm_errors_statistics_{0}.txt".format( i ))
+            errors_context_filename = os.path.join(error_dir,"memm_errors_context_{0}.txt".format( i ) ),
+            errors_statistics_filename = os.path.join(error_dir,"memm_errors_statistics_{0}.txt".format( i ) ))
         results.append((total_correct_known, total_correct_unknown, total_known, total_unknown, upper_bound  ) )
 
     avg_prec = sum([(result[0]+result[1])*100.0/(result[2] + result[3]) for result in results])  / len( results )
@@ -323,18 +323,13 @@ if __name__=="__main__":
     #memm_algo = MMEMAlgorithm(N_filter_func= N_rnc_pos)
     #memm_algo.load_memm_model( r"/home/egor/disamb_test/memm_pos.dat"  )
     #remove_ambiguity_dir(corpus_dir = r"/home/egor/disamb_test/test_ambig",output_dir = r"/home/egor/disamb_test/memm_base_tags", algo = memm_algo )
-    import ConfigParser
-
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument('-cfg', '--config')
+    parser.add_argument('-err', '--error')
     args = parser.parse_args()
-    config = ConfigParser.RawConfigParser()
-    config.read( args.config )
 
-    gold_dir = config.get( "dir", "gold_dir" )
-    ambig_dir = config.get( "dir", "morph_analysis_dir" )
-    algo_dir = config.get( "dir", "algo_dir" )
+    gold_dir, ambig_dir, algo_dir = get_dirs_from_config( args.config )
 
     memm_cross_validate( corpus_dir = gold_dir,
-        algo_dir= algo_dir, morph_analysis_dir= ambig_dir, N_func = N_rnc_pos , P = P_no_garbage)
+        algo_dir= algo_dir, morph_analysis_dir= ambig_dir, N_func = N_rnc_pos , P = P_no_garbage, error_dir = args.error)

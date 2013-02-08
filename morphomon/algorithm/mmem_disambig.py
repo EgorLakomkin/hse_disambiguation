@@ -323,4 +323,18 @@ if __name__=="__main__":
     #memm_algo = MMEMAlgorithm(N_filter_func= N_rnc_pos)
     #memm_algo.load_memm_model( r"/home/egor/disamb_test/memm_pos.dat"  )
     #remove_ambiguity_dir(corpus_dir = r"/home/egor/disamb_test/test_ambig",output_dir = r"/home/egor/disamb_test/memm_base_tags", algo = memm_algo )
-    memm_cross_validate( corpus_dir = "/home/egor/disamb_test/test_gold/", algo_dir= "/home/egor/disamb_test/memm_modified_tags", morph_analysis_dir= r"/home/egor/disamb_test/test_ambig", N_func = N_rnc_positional_modified_tagset , P = P_no_garbage)
+    import ConfigParser
+
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-cfg', '--config')
+    args = parser.parse_args()
+    config = ConfigParser.RawConfigParser()
+    config.read( args.config )
+
+    gold_dir = config.get( "dir", "gold_dir" )
+    ambig_dir = config.get( "dir", "morph_analysis_dir" )
+    algo_dir = config.get( "dir", "algo_dir" )
+
+    memm_cross_validate( corpus_dir = gold_dir,
+        algo_dir= algo_dir, morph_analysis_dir= ambig_dir, N_func = N_rnc_pos , P = P_no_garbage)

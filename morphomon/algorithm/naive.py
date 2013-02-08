@@ -154,4 +154,4 @@ if __name__ == "__main__":
     algo_dir = config.get( "dir", "algo_dir" )
 
 
-    naive_cross_validate( corpus_dir =gold_dir, algo_dir= ambig_dir, morph_analysis_dir= algo_dir, N_func = N_rnc_pos )
+    naive_cross_validate( corpus_dir =gold_dir, algo_dir=  algo_dir , morph_analysis_dir=ambig_dir, N_func = N_rnc_pos )

@@ -130,7 +130,7 @@ def hmm_cross_validate(corpus_dir, algo_dir, morph_analysis_dir, N_func):
     corpus_files = get_corpus_files(corpus_dir)
 
     results = []
-    num_iters = 5
+    num_iters = 1
     for i in range(1,num_iters + 1):
         shuffle( corpus_files )
         remove_directory_content(algo_dir)
@@ -181,4 +181,19 @@ if __name__=="__main__":
     #dump_object( r"/home/egor/disamb_test/hmm_base_tags.dat",  hmm_algo )
     #hmm_algo = load_object( r"/home/egor/disamb_test/hmm_base_tags.dat"  )
     #remove_ambiguity_dir(corpus_dir = r"/home/egor/disamb_test/test_ambig",output_dir = r"/home/egor/disamb_test/test_hmm_base_tags", algo = hmm_algo )
-    hmm_cross_validate( corpus_dir = "/home/egor/disamb_test/gold/", algo_dir= "/home/egor/disamb_test/hmm_modified_tags", morph_analysis_dir= r"/home/egor/disamb_test/mystem_txt", N_func = N_rnc_positional_modified_tagset )
+
+    import ConfigParser
+
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-cfg', '--config')
+    args = parser.parse_args()
+    config = ConfigParser.RawConfigParser()
+    config.read( args.config )
+
+    gold_dir = config.get( "dir", "gold_dir" )
+    ambig_dir = config.get( "dir", "morph_analysis_dir" )
+    algo_dir = config.get( "dir", "algo_dir" )
+
+    hmm_cross_validate( corpus_dir = gold_dir, algo_dir= algo_dir,
+        morph_analysis_dir=ambig_dir, N_func = N_rnc_pos )

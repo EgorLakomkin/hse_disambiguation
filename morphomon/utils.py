@@ -388,13 +388,6 @@ def get_corpora_preps(corpus_dir):
     #preps = [prep.encode('utf-8') for prep in preps]
     return preps
 
-def sub_plurative(token, pluratives ):
-    token_wf = token.word
-    if token_wf in pluratives:
-        token_gram = token.gram
-        pos_tag = token_gram.split(',')
-        set_gender(pos_tag)
-
 def get_corpora_pluratives(corpus_dir):
     pluratives = set()
     for token in get_tokens_from_directory(corpus_dir, N_filter_func = N_rnc_positional_modified_tagset):
@@ -408,5 +401,5 @@ def get_corpora_pluratives(corpus_dir):
     return pluratives
 
 if __name__ == "__main__":    
-    pluratives = get_corpora_pluratives(corpus_dir= r"/home/egor/disamb_test/gold/" ):
+    pluratives = get_corpora_pluratives(corpus_dir= r"/home/egor/disamb_test/gold/" )
     

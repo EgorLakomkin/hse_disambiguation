@@ -371,7 +371,7 @@ def remove_ambiguity_file_list_inner(ambig_file):
 def remove_ambiguity_file_list(ambig_filelist, output_dir, algo):
     global _RA_GLOBALS
     _RA_GLOBALS = [ output_dir, algo ]
-    pool = multiprocessing.Pool()
+    pool = multiprocessing.Pool(3)
     n = pool.map(remove_ambiguity_file_list_inner, ambig_filelist)
     n = sum(1 for x in n if x)
     pool.close()

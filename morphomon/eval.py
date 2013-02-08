@@ -65,7 +65,9 @@ def calculate_precision(file_algo_name, file_gold_standart_name, file_ambi_name,
     correct_unknown = 0.0
     max_value_known = 0.0
     max_value_unknown = 0.0
-    upper_bound = 0.0
+    upper_bound_known = 0.0
+    upper_bound_unknown = 0.0
+
 
     errors = defaultdict( float )
 
@@ -149,7 +151,10 @@ def calculate_precision(file_algo_name, file_gold_standart_name, file_ambi_name,
             #считаем верхнюю границу
             results_ambig = sum([  M( ambig_token, gold_token_record) for ambig_token in ambig_token_records ])
             if results_ambig > 0.0:
-                upper_bound += 1.0
+                if 'bastard' in line_ambi:
+                    upper_bound_unknown += 1.0
+                else:
+                    upper_bound_known += 1.0
 
 
         else:
@@ -189,7 +194,7 @@ def calculate_precision(file_algo_name, file_gold_standart_name, file_ambi_name,
     algo_f.close()
     gold_f.close()
     ambi_f.close()
-    return correct_unknown, correct_known, max_value_unknown, max_value_known,errors, upper_bound
+    return correct_unknown, correct_known, max_value_unknown, max_value_known,errors, upper_bound_unknown, upper_bound_known
 
 
 def calculate_dir_precision(algo_dir, gold_dir, ambi_dir, M , N, P, errors_context_filename, errors_statistics_filename):
@@ -201,7 +206,9 @@ def calculate_dir_precision(algo_dir, gold_dir, ambi_dir, M , N, P, errors_conte
     total_known = 0
     total_correct_unknown = 0
     total_correct_known = 0
-    total_upperbound = 0
+    total_upperbound_known = 0
+    total_upperbound_unknown = 0
+
     total_error_stats = defaultdict(float)
     for algo_file in algo_files:
         print "Evaluating file {0}".format( algo_file )
@@ -209,7 +216,7 @@ def calculate_dir_precision(algo_dir, gold_dir, ambi_dir, M , N, P, errors_conte
         gold_file = os.path.join( gold_dir, os.path.basename( algo_file ) )
 
         if os.path.exists( algo_file ) and os.path.exists( gold_file ):
-            cur_correct_unknown, cur_correct_known, cur_total_unknown, cur_total_known,errors, cur_upper_bound = calculate_precision( file_algo_name= algo_file, file_gold_standart_name= gold_file,
+            cur_correct_unknown, cur_correct_known, cur_total_unknown, cur_total_known,errors, cur_upper_bound_unknown,cur_upper_bound_known  = calculate_precision( file_algo_name= algo_file, file_gold_standart_name= gold_file,
                 file_ambi_name = ambi_file, M=M , N=N, P=P,
                 errors_context_filename = errors_context_filename,
                 errors_statistics_filename = errors_statistics_filename )
@@ -219,7 +226,8 @@ def calculate_dir_precision(algo_dir, gold_dir, ambi_dir, M , N, P, errors_conte
             total_correct_unknown += cur_correct_unknown
             total_correct_known += cur_correct_known
             total_correct = total_correct_unknown + total_correct_known
-            total_upperbound += cur_upper_bound
+            total_upperbound_known += cur_upper_bound_known
+            total_upperbound_unknown += cur_upper_bound_unknown
 
             for k,v in errors.iteritems():
                 total_error_stats[k] += v
@@ -227,7 +235,7 @@ def calculate_dir_precision(algo_dir, gold_dir, ambi_dir, M , N, P, errors_conte
             print "percent correct (total)", int(float(total_correct)/total*100)
             print "percent correct (known words)", int(float(total_correct_known)/total_known*100)
 
-            print "percent (upper bound words)", int(float(total_upperbound)/total*100)
+            print "percent (upper bound words)", int(float(total_upperbound_unknown + total_upperbound_known)/total*100)
 
 
             if total_unknown:
@@ -239,7 +247,7 @@ def calculate_dir_precision(algo_dir, gold_dir, ambi_dir, M , N, P, errors_conte
 
             num+=1
             print "{0} file processed. {1}%".format(gold_file, num/(len(algo_files)+0.0)*100 )
-    return total_correct_known, total_correct_unknown, total_known, total_unknown, total_upperbound
+    return total_correct_known, total_correct_unknown, total_known, total_unknown, total_upperbound_known, total_upperbound_unknown
 
 
 _NAIVE_CV_GLOBALS = None
@@ -269,11 +277,11 @@ def cross_validate_inner(i):
     print "Finished training. Starting testing phase!"
     remove_ambiguity_file_list(ambig_filelist=morph_analysis_files, output_dir= algo_dir, algo = algo )
     print "Finished working of algo. Starting measuring phase"
-    total_correct_known, total_correct_unknown, total_known, total_unknown, upper_bound = calculate_dir_precision( algo_dir = algo_dir, ambi_dir= morph_analysis_dir, gold_dir =  corpus_dir, M = M_strict_mathcher, N =  N_func, P = P_no_garbage,
+    total_correct_known, total_correct_unknown, total_known, total_unknown, upper_bound_known,upper_bound_unknown  = calculate_dir_precision( algo_dir = algo_dir, ambi_dir= morph_analysis_dir, gold_dir =  corpus_dir, M = M_strict_mathcher, N =  N_func, P = P_no_garbage,
         errors_context_filename = os.path.join(error_dir, "naive_errors_context_{0}.txt".format( i )),
         errors_statistics_filename = os.path.join(error_dir, "naive_errors_statistics_{0}.txt".format( i )) )
 
-    return (total_correct_known, total_correct_unknown, total_known, total_unknown, upper_bound)
+    return (total_correct_known, total_correct_unknown, total_known, total_unknown, upper_bound_known,upper_bound_unknown )
 
 
 def cross_validate(num_iters, algo_name, corpus_dir, algo_dir, morph_analysis_dir, N_func, error_dir):
@@ -291,28 +299,40 @@ def cross_validate(num_iters, algo_name, corpus_dir, algo_dir, morph_analysis_di
     pool.join()
 
     # TODO: Check for ZeroDivisionError here.
-    avg_prec = sum([(result[0]+result[1])*100.0/(result[2] + result[3]) for result in results])  / len( results )
-    std_dev = math.sqrt( sum([ ((result[0]+result[1])*100.0/(result[2] + result[3])- avg_prec)* ((result[0]+result[1])*100.0/(result[2] + result[3]) - avg_prec) for result in results ] )  / num_iters )
+    avg_prec = sum([(result[0]+result[1])/(result[2] + result[3]) for result in results])  / len( results )
+    std_dev = math.sqrt( sum([ ((result[0]+result[1])*100.0/(result[2] + result[3])- avg_prec)* ((result[0]+result[1])/(result[2] + result[3]) - avg_prec) for result in results ] )  / num_iters )
 
-    avg_known_prec = sum([result[0]*100.0/result[2] for result in results])  / len( results )
-    avg_unknown_prec = sum([result[1]*100.0/result[3] for result in results])  / len( results )
-    std_dev_known = math.sqrt( sum([ (result[0]*100.0/result[2]- avg_known_prec)* (result[0]*100.0/result[2] - avg_known_prec) for result in results ] )  / num_iters )
-    std_dev_unknown = math.sqrt( sum([ (result[1]*100.0/result[3]- avg_unknown_prec)* (result[1]*100.0/result[3] - avg_unknown_prec) for result in results ] )  / num_iters )
-    avg_upper_bound = sum([result[4]*100.0/(result[2]+result[3]) for result in results])  / len( results )
+    avg_known_prec = sum([result[0]/result[2] for result in results])  / len( results )
+    avg_unknown_prec = sum([result[1]/result[3] for result in results])  / len( results )
+    std_dev_known = math.sqrt( sum([ (result[0]/result[2]- avg_known_prec)* (result[0]/result[2] - avg_known_prec) for result in results ] )  / num_iters )
+    std_dev_unknown = math.sqrt( sum([ (result[1]/result[3]- avg_unknown_prec)* (result[1]/result[3] - avg_unknown_prec) for result in results ] )  / num_iters )
 
-    stdev_upper_bound = math.sqrt( sum([ (result[4]*100.0/(result[2]+result[3]) - avg_upper_bound)* (result[4]*100.0/(result[2]+result[3]) - avg_upper_bound )  for result in results ]  )  / num_iters )
+    avg_upper_bound_known = sum([result[4]/(result[2]+result[3]) for result in results])  / len( results )
 
-    print "Total Average precision  : {0}%".format( avg_prec )
-    print "Total StdDev  : {0}%".format( std_dev)
+    stdev_upper_bound_known = math.sqrt( sum([ (result[4]/(result[2]+result[3]) - avg_upper_bound_known)* (result[4]/(result[2]+result[3]) - avg_upper_bound_known )  for result in results ]  )  / num_iters )
 
-    print "Average precision known : {0}%".format( avg_known_prec )
-    print "StdDev known : {0}%".format( std_dev_known )
+    avg_upper_bound_unknown = sum([result[5]/(result[2]+result[3]) for result in results])  / len( results )
 
-    print "Average precision unknown : {0}%".format( avg_unknown_prec )
-    print "StdDev unknown : {0}%".format( std_dev_unknown )
-    print "Average upper bound : {0}%".format( avg_upper_bound )
+    stdev_upper_bound_unknown = math.sqrt( sum([ (result[5]/(result[2]+result[3]) - avg_upper_bound_unknown)* (result[5]/(result[2]+result[3]) - avg_upper_bound_unknown )  for result in results ]  )  / num_iters )
 
-    print "StdDev upperbound : {0}%".format( stdev_upper_bound )
+
+    print "Total Average precision  : {0}%".format( avg_prec*100 )
+    print "Total StdDev  : {0}%".format( std_dev*100)
+
+    print "Average precision known : {0}%".format( avg_known_prec*100 )
+    print "StdDev known : {0}%".format( std_dev_known*100 )
+
+    print "Average precision unknown : {0}%".format( avg_unknown_prec*100 )
+    print "StdDev unknown : {0}%".format( std_dev_unknown*100 )
+
+    print "Average upper bound known: {0}%".format( avg_upper_bound_known*100 )
+
+    print "StdDev upperbound known: {0}%".format( stdev_upper_bound_known *100)
+
+    print "Average upper bound unknown: {0}%".format( avg_upper_bound_unknown*100 )
+
+    print "StdDev upperbound unknown : {0}%".format( stdev_upper_bound_unknown *100)
+
 
     print "Finished {0} algorithm with {1} tagset".format( algo_name, N_func )
     print results

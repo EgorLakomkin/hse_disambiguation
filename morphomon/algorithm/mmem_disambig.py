@@ -22,7 +22,7 @@ class MMEMAlgorithm(object):
     def __init__(self, N_filter_func = N_default):
         self.filter_func = N_filter_func
         self.me = MaxentModel()
-        self.num_train_iters = 50
+        self.num_train_iters = 500
 
     def load_memm_model(self, filename):
         self.me.load( filename  )

@@ -1,11 +1,8 @@
 # -*- coding: utf-8 -*-
 import codecs
-import os
-from random import choice, shuffle
+from random import choice
 import sys
-import math
-from morphomon.eval import calculate_dir_precision, M_strict_mathcher, P_no_garbage
-import multiprocessing
+
 
 __author__ = 'egor'
 from morphomon.utils import *
@@ -86,69 +83,6 @@ class NaiveAlgorithm(object):
             sentence.append( (token[0].word, token) )
         out_f.close()
 
-_NAIVE_CV_GLOBALS = None
-
-def naive_cross_validate_inner(i):
-    corpus_dir, algo_dir, morph_analysis_dir, N_func, error_dir, num_iters, corpus_files, splits = _NAIVE_CV_GLOBALS
-
-    remove_directory_content(algo_dir)
-    print "Starting {0} fold".format( i )
-    train_fold_corpus_files = flatten(splits[j] for j in range(num_iters) if i != j)
-    test_corpus_files = flatten(splits[j] for j in range(num_iters) if i == j)
-    naive_algo = NaiveAlgorithm(N_func=N_func)
-    naive_algo.train_from_filelist( train_fold_corpus_files )
-    print "Finished training. Starting testing phase!"
-    morph_analysis_files = [ os.path.join( morph_analysis_dir, os.path.basename( test_file ) ) for test_file in test_corpus_files if os.path.exists( os.path.join( morph_analysis_dir, os.path.basename( test_file ) ) )]
-    remove_ambiguity_file_list(ambig_filelist=morph_analysis_files, output_dir= algo_dir, algo =naive_algo )
-    print "Finished working of algo. Starting measuring phase"
-    total_correct_known, total_correct_unknown, total_known, total_unknown, upper_bound = calculate_dir_precision( algo_dir = algo_dir, ambi_dir= morph_analysis_dir, gold_dir =  corpus_dir, M = M_strict_mathcher, N =  N_func, P = P_no_garbage,
-        errors_context_filename = os.path.join(error_dir, "naive_errors_context_{0}.txt".format( i )),
-        errors_statistics_filename = os.path.join(error_dir, "naive_errors_statistics_{0}.txt".format( i )) )
-    
-    return (total_correct_known, total_correct_unknown, total_known, total_unknown, upper_bound)
-
-
-def naive_cross_validate(corpus_dir, algo_dir, morph_analysis_dir, N_func, error_dir):
-    global _NAIVE_CV_GLOBALS
-
-    num_iters = 5
-    corpus_files = get_corpus_files(corpus_dir)
-    shuffle(corpus_files)
-    splits = split_seq(corpus_files, num_iters)
-
-    _NAIVE_CV_GLOBALS = [ corpus_dir, algo_dir, morph_analysis_dir, N_func, error_dir, num_iters, corpus_files, splits ]
-
-    pool = multiprocessing.Pool()
-    results = pool.map(naive_cross_validate_inner, range(num_iters))
-    pool.close()
-    pool.join()
-
-    # TODO: Check for ZeroDivisionError here.
-    avg_prec = sum([(result[0]+result[1])*100.0/(result[2] + result[3]) for result in results])  / len( results )
-    std_dev = math.sqrt( sum([ ((result[0]+result[1])*100.0/(result[2] + result[3])- avg_prec)* ((result[0]+result[1])*100.0/(result[2] + result[3]) - avg_prec) for result in results ] )  / num_iters )
-
-    avg_known_prec = sum([result[0]*100.0/result[2] for result in results])  / len( results )
-    avg_unknown_prec = sum([result[1]*100.0/result[3] for result in results])  / len( results )
-    std_dev_known = math.sqrt( sum([ (result[0]*100.0/result[2]- avg_known_prec)* (result[0]*100.0/result[2] - avg_known_prec) for result in results ] )  / num_iters )
-    std_dev_unknown = math.sqrt( sum([ (result[1]*100.0/result[3]- avg_unknown_prec)* (result[1]*100.0/result[3] - avg_unknown_prec) for result in results ] )  / num_iters )
-    avg_upper_bound = sum([result[4]*100.0/(result[2]+result[3]) for result in results])  / len( results )
-
-    stdev_upper_bound = math.sqrt( sum([ (result[4]*100.0/(result[2]+result[3]) - avg_upper_bound)* (result[4]*100.0/(result[2]+result[3]) - avg_upper_bound )  for result in results ]  )  / num_iters )
-
-    print "Total Average precision  : {0}%".format( avg_prec )
-    print "Total StdDev  : {0}%".format( std_dev)
-
-    print "Average precision known : {0}%".format( avg_known_prec )
-    print "StdDev known : {0}%".format( std_dev_known )
-
-    print "Average precision unknown : {0}%".format( avg_unknown_prec )
-    print "StdDev unknown : {0}%".format( std_dev_unknown )
-    print "Average upper bound : {0}%".format( avg_upper_bound )
-
-    print "StdDev upperbound : {0}%".format( stdev_upper_bound )
-
-    print results
-
 if __name__ == "__main__":
 
     #naive_algo = NaiveAlgorithm( corpus_dir = "/home/egor/disamb_test/gold/", N_func= N_rnc_positional_microsubset )
@@ -157,13 +91,4 @@ if __name__ == "__main__":
     #naive_algo.remove_ambiguity_file(r"C:\disamb_test\mystem_txt\_rbk2_2140.txt", r"C:\disamb_test\algo_output\_rbk2_2140.txt" )
     #remove_ambiguity_dir(corpus_dir = r"/home/egor/disamb_test/mystem_txt",output_dir = r"/home/egor/disamb_test/naive_full_tag_output", algo = naive_algo )
 
-    import argparse
-    parser = argparse.ArgumentParser()
-    parser.add_argument('-cfg', '--config')
-    parser.add_argument('-err', '--error')
-    args = parser.parse_args()
-
-    gold_dir, ambig_dir, algo_dir = get_dirs_from_config( args.config )
-
-
-    naive_cross_validate( corpus_dir =gold_dir, algo_dir=  algo_dir , morph_analysis_dir=ambig_dir, N_func = N_rnc_pos, error_dir = args.error )
+    pass

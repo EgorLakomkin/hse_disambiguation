@@ -1,16 +1,27 @@
 # -*- coding: utf-8 -*-
 import codecs
 from collections import defaultdict
+import multiprocessing
 import os
+from random import shuffle
 import re
 import sys
-from morphomon.utils import TokenRecord, N_rnc_pos, get_corpus_files, N_default, N_rnc_positional_microsubset, get_diff_between_tokens, parse_token, EOS_TOKEN
+import math
+from morphomon.algorithm.hmm_disambig import HMMAlgorithm
+from morphomon.algorithm.mmem_disambig import MMEMAlgorithm
+from morphomon.algorithm.naive import NaiveAlgorithm
+from morphomon.utils import TokenRecord, N_rnc_pos, get_corpus_files, N_default, N_rnc_positional_microsubset, get_diff_between_tokens, parse_token, EOS_TOKEN, split_seq, remove_directory_content, flatten, remove_ambiguity_file_list, get_dirs_from_config
 import settings
 
 __author__ = 'egor'
 
 
 garbage_tags = [ 'init', 'abbr', 'ciph', 'nonlex' ]
+
+class ALGONAMES:
+    BASELINE = 'baseline'
+    HMM = 'hmm'
+    MEMM = 'memm'
 
 def M_strict_mathcher(algo_token, gold_token):
     #no lemma comparison
@@ -233,8 +244,91 @@ def calculate_dir_precision(algo_dir, gold_dir, ambi_dir, M , N, P, errors_conte
             print "{0} file processed. {1}%".format(gold_file, num/(len(algo_files)+0.0)*100 )
     return total_correct_known, total_correct_unknown, total_known, total_unknown, total_upperbound
 
+
+_NAIVE_CV_GLOBALS = None
+
+def cross_validate_inner(i):
+    corpus_dir, algo_dir, morph_analysis_dir, N_func, error_dir, num_iters, corpus_files, splits, algo_name = _NAIVE_CV_GLOBALS
+
+    remove_directory_content(algo_dir)
+    print "Starting {0} fold".format( i )
+    train_fold_corpus_files = flatten(splits[j] for j in range(num_iters) if i != j)
+    test_corpus_files = flatten(splits[j] for j in range(num_iters) if i == j)
+
+    morph_analysis_files = [ os.path.join( morph_analysis_dir, os.path.basename( test_file ) ) for test_file in test_corpus_files if os.path.exists( os.path.join( morph_analysis_dir, os.path.basename( test_file ) ) )]
+
+    if algo_name is ALGONAMES.BASELINE:
+        algo = NaiveAlgorithm(N_func=N_func)
+        algo.train_from_filelist( train_fold_corpus_files )
+    elif algo_name is ALGONAMES.HMM:
+        algo = HMMAlgorithm(N_filter_func=N_func)
+        algo.train_model_from_filelist(corpus_files =  train_fold_corpus_files )
+    elif algo_name is ALGONAMES.MEMM:
+        algo = MMEMAlgorithm(N_filter_func=N_func)
+        algo.train_model_file_list(corpus_filelist =  train_fold_corpus_files, ambiguity_dir = morph_analysis_dir )
+
+
+    print "Finished training. Starting testing phase!"
+    remove_ambiguity_file_list(ambig_filelist=morph_analysis_files, output_dir= algo_dir, algo = algo )
+    print "Finished working of algo. Starting measuring phase"
+    total_correct_known, total_correct_unknown, total_known, total_unknown, upper_bound = calculate_dir_precision( algo_dir = algo_dir, ambi_dir= morph_analysis_dir, gold_dir =  corpus_dir, M = M_strict_mathcher, N =  N_func, P = P_no_garbage,
+        errors_context_filename = os.path.join(error_dir, "naive_errors_context_{0}.txt".format( i )),
+        errors_statistics_filename = os.path.join(error_dir, "naive_errors_statistics_{0}.txt".format( i )) )
+
+    return (total_correct_known, total_correct_unknown, total_known, total_unknown, upper_bound)
+
+
+def cross_validate(algo_name, corpus_dir, algo_dir, morph_analysis_dir, N_func, error_dir):
+    global _NAIVE_CV_GLOBALS
+
+    num_iters = 5
+    corpus_files = get_corpus_files(corpus_dir)
+    shuffle(corpus_files)
+    splits = split_seq(corpus_files, num_iters)
+
+    _NAIVE_CV_GLOBALS = [ corpus_dir, algo_dir, morph_analysis_dir, N_func, error_dir, num_iters, corpus_files, splits, algo_name ]
+
+    pool = multiprocessing.Pool()
+    results = pool.map(cross_validate_inner, range(num_iters))
+    pool.close()
+    pool.join()
+
+    # TODO: Check for ZeroDivisionError here.
+    avg_prec = sum([(result[0]+result[1])*100.0/(result[2] + result[3]) for result in results])  / len( results )
+    std_dev = math.sqrt( sum([ ((result[0]+result[1])*100.0/(result[2] + result[3])- avg_prec)* ((result[0]+result[1])*100.0/(result[2] + result[3]) - avg_prec) for result in results ] )  / num_iters )
+
+    avg_known_prec = sum([result[0]*100.0/result[2] for result in results])  / len( results )
+    avg_unknown_prec = sum([result[1]*100.0/result[3] for result in results])  / len( results )
+    std_dev_known = math.sqrt( sum([ (result[0]*100.0/result[2]- avg_known_prec)* (result[0]*100.0/result[2] - avg_known_prec) for result in results ] )  / num_iters )
+    std_dev_unknown = math.sqrt( sum([ (result[1]*100.0/result[3]- avg_unknown_prec)* (result[1]*100.0/result[3] - avg_unknown_prec) for result in results ] )  / num_iters )
+    avg_upper_bound = sum([result[4]*100.0/(result[2]+result[3]) for result in results])  / len( results )
+
+    stdev_upper_bound = math.sqrt( sum([ (result[4]*100.0/(result[2]+result[3]) - avg_upper_bound)* (result[4]*100.0/(result[2]+result[3]) - avg_upper_bound )  for result in results ]  )  / num_iters )
+
+    print "Total Average precision  : {0}%".format( avg_prec )
+    print "Total StdDev  : {0}%".format( std_dev)
+
+    print "Average precision known : {0}%".format( avg_known_prec )
+    print "StdDev known : {0}%".format( std_dev_known )
+
+    print "Average precision unknown : {0}%".format( avg_unknown_prec )
+    print "StdDev unknown : {0}%".format( std_dev_unknown )
+    print "Average upper bound : {0}%".format( avg_upper_bound )
+
+    print "StdDev upperbound : {0}%".format( stdev_upper_bound )
+
+    print results
+
+
 if __name__=="__main__":
-    print calculate_dir_precision(gold_dir=  r"/home/egor/disamb_test/gold/",algo_dir=r"/home/egor/disamb_test/test_hmm_base_tags",
-        ambi_dir= r"/home/egor/disamb_test/test_ambig", M =M_strict_mathcher,  N =  N_rnc_positional_microsubset, P = P_no_garbage,
-        errors_context_filename = r"/home/egor/disamb_test/hmm_errors_context.txt",
-        errors_statistics_filename = r"/home/egor/disamb_test/hmm_errors_statistics.txt")
+
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-cfg', '--config')
+    parser.add_argument('-err', '--error')
+    args = parser.parse_args()
+
+    gold_dir, ambig_dir, algo_dir = get_dirs_from_config( args.config )
+
+    cross_validate(algo_name= ALGONAMES.BASELINE, corpus_dir = gold_dir,
+        algo_dir= algo_dir, morph_analysis_dir= ambig_dir, N_func = N_rnc_pos, error_dir = args.error)

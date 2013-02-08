@@ -63,6 +63,22 @@ def N_ruscorpora_tagset_base_preprocess(tagset):
     if 'loc2' in token_grams:
         token_grams.remove('loc2')
         token_grams.append('loc')
+
+    if 'dat2' in token_grams:
+        token_grams.remove('dat2')
+
+    if 'acc2' in token_grams:
+        token_grams.remove('acc2')
+        token_grams.append('nom')
+
+    if 'voc' in token_grams:
+        token_grams.remove('voc')
+
+    if 'adnum' in token_grams:
+        token_grams.remove('adnum')
+        token_grams.append('gen')
+
+
     token_grams[0] = mystem_rnc_pos_convert( token_grams[0] )
     return ','.join(token_grams)
 
@@ -90,7 +106,11 @@ def mystem_rnc_pos_convert(pos_tag):
 
     if pos_tag == 'praedic':
         return 'adv'
+
     if pos_tag == 'parenth':
+        return 'adv'
+
+    if pos_tag == 'praedic-pro':
         return 'adv'
 
     return pos_tag
@@ -356,6 +376,14 @@ def get_diff_between_tokens(token1, token2):
         if gram != token2_arr[idx]:
             lst_errors.append( (full_tag_set_str[idx], idx) )
     return lst_errors
+
+def get_corpora_preps(corpus_dir):
+    preps = set()
+    for token in get_tokens_from_directory(corpus_dir, N_filter_func = N_rnc_pos):
+        if 'pr' == token[0].gram:
+            preps.add( '\'' + token[0].word.lower() + '\'')
+    #preps = [prep.encode('utf-8') for prep in preps]
+    return preps
 
 def get_corpora_preps(corpus_dir):
     preps = set()

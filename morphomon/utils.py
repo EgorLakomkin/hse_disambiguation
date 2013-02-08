@@ -112,7 +112,7 @@ def N_rnc_pos(tag_set):
 
 
 pos_tag = ['s-pro','adv-pro','a-pro','s','a','num','a-num','v','adv', 'praedic','parenth', 'praedic-pro', 'pr','conj','part', 'intj','abrev','vger','vpartcp']
-gender_tags = ['m','f','n','m-f']
+gender_tags = ['m','f','n']
 anim_tags = ['anim','inan']
 number_tags = ['sg','pl']
 case_tags = ['nom','gen','gen2','dat','dat2', 'acc','acc2', 'ins','loc','loc2', 'voc', 'adnum']
@@ -334,3 +334,4 @@ def get_diff_between_tokens(token1, token2):
 
 if __name__ == "__main__":
     print N_rnc_positional_modified_tagset("V=pl,dat,tran=partCp,f,brev,ger,voc")
+    print N_rnc_positional_modified_tagset("V=pl,dat,tran=partCp,m-f,brev,ger,voc")

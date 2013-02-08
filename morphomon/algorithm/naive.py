@@ -118,4 +118,18 @@ if __name__ == "__main__":
     #naive_algo = load_object( r"/home/egor/disamb_test/naive_positional_full.dat" )
     #naive_algo.remove_ambiguity_file(r"C:\disamb_test\mystem_txt\_rbk2_2140.txt", r"C:\disamb_test\algo_output\_rbk2_2140.txt" )
     #remove_ambiguity_dir(corpus_dir = r"/home/egor/disamb_test/mystem_txt",output_dir = r"/home/egor/disamb_test/naive_full_tag_output", algo = naive_algo )
-    naive_cross_validate( corpus_dir = "/home/egor/disamb_test/test_gold/", algo_dir= "/home/egor/disamb_test/baseline_pos", morph_analysis_dir= r"/home/egor/disamb_test/test_ambig", N_func = N_rnc_pos )
+    import ConfigParser
+
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-cfg', '--config')
+    args = parser.parse_args()
+    config = ConfigParser.RawConfigParser()
+    config.read( args.config )
+
+    gold_dir = config.get( "dir", "gold_dir" )
+    ambig_dir = config.get( "dir", "morph_analysis_dir" )
+    algo_dir = config.get( "dir", "algo_dir" )
+
+
+    naive_cross_validate( corpus_dir =gold_dir, algo_dir= ambig_dir, morph_analysis_dir= algo_dir, N_func = N_rnc_pos )

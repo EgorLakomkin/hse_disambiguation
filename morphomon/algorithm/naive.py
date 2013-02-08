@@ -5,6 +5,7 @@ from random import choice, shuffle
 import sys
 import math
 from morphomon.eval import calculate_dir_precision, M_strict_mathcher, P_no_garbage
+import multiprocessing
 
 __author__ = 'egor'
 <<<<<<< HEAD
@@ -121,7 +122,7 @@ def naive_cross_validate(corpus_dir, algo_dir, morph_analysis_dir, N_func, error
 
     _NAIVE_CV_GLOBALS = [ corpus_dir, algo_dir, morph_analysis_dir, N_func, error_dir, num_iters, corpus_files, splits ]
 
-    pool = OuterPool()
+    pool = multiprocessing.Pool()
     results = pool.map(naive_cross_validate_inner, range(num_iters))
     pool.close()
     pool.join()

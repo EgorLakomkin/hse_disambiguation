@@ -8,6 +8,10 @@ import re
 import sys
 import multiprocessing
 
+def get_word_ending(word, enging_length = 3):
+    ending = word[-enging_length:]
+    return ending.lower()
+
 def split_seq(seq, p):
     newseq = []
     n = len(seq) / p

@@ -150,8 +150,7 @@ def calculate_precision(file_algo_name, file_gold_standart_name, file_ambi_name,
             results_ambig = sum([  M( ambig_token, gold_token_record) for ambig_token in ambig_token_records ])
             if results_ambig > 0.0:
                 upper_bound += 1.0
-            else:
-                pass
+
 
         else:
             context.append( (gold_token_record, algo_token_record, OK) )
@@ -277,10 +276,9 @@ def cross_validate_inner(i):
     return (total_correct_known, total_correct_unknown, total_known, total_unknown, upper_bound)
 
 
-def cross_validate(algo_name, corpus_dir, algo_dir, morph_analysis_dir, N_func, error_dir):
+def cross_validate(num_iters, algo_name, corpus_dir, algo_dir, morph_analysis_dir, N_func, error_dir):
     global _NAIVE_CV_GLOBALS
 
-    num_iters = 5
     corpus_files = get_corpus_files(corpus_dir)
     shuffle(corpus_files)
     splits = split_seq(corpus_files, num_iters)
@@ -331,12 +329,14 @@ if __name__=="__main__":
     parser.add_argument('-algo_dir','--algo_dir')
     parser.add_argument('-morph_dir','--morph_dir')
     parser.add_argument('-tag_type','--tag_type')
+    parser.add_argument('-num_iters','--num_iters')
 
     args = parser.parse_args()
 
     gold_dir, ambig_dir, algo_dir = args.gold_dir, args.morph_dir, args.algo_dir
     tag_type = args.tag_type
+    num_iters = int(args.num_iters)
 
     algo_name = args.algorithm
-    cross_validate(algo_name= algo_name, corpus_dir = gold_dir,
+    cross_validate(num_iters = num_iters, algo_name= algo_name, corpus_dir = gold_dir,
         algo_dir= algo_dir, morph_analysis_dir= ambig_dir, N_func = tag_set_name_N.get( tag_type ), error_dir = args.error)

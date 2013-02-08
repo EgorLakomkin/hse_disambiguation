@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-import codecs
 import os
 from morphomon.preprocessing.rus_corpora_parser import process_ruscorpora_file
 from morphomon.utils import get_corpus_files

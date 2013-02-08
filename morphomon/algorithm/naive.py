@@ -36,9 +36,7 @@ class NaiveAlgorithm(object):
             print >>sys.stderr, "Baseline algo train on file {0}".format( file )
             for token in get_tokens_from_file(file, N_filter_func = self.filter_func):
                 if token != [EOS_TOKEN]:
-                    if len(token) > 1:
-                        print "Ambiguity in corpus"
-                        print "Pick random token"
+
                     token = choice(token)
                     token_word = token.word
                     token_word_ending = get_word_ending( token_word )
@@ -83,12 +81,3 @@ class NaiveAlgorithm(object):
             sentence.append( (token[0].word, token) )
         out_f.close()
 
-if __name__ == "__main__":
-
-    #naive_algo = NaiveAlgorithm( corpus_dir = "/home/egor/disamb_test/gold/", N_func= N_rnc_positional_microsubset )
-    #dump_object( r"/home/egor/disamb_test/naive_positional_full.dat" , naive_algo  )
-    #naive_algo = load_object( r"/home/egor/disamb_test/naive_positional_full.dat" )
-    #naive_algo.remove_ambiguity_file(r"C:\disamb_test\mystem_txt\_rbk2_2140.txt", r"C:\disamb_test\algo_output\_rbk2_2140.txt" )
-    #remove_ambiguity_dir(corpus_dir = r"/home/egor/disamb_test/mystem_txt",output_dir = r"/home/egor/disamb_test/naive_full_tag_output", algo = naive_algo )
-
-    pass

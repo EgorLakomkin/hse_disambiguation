@@ -1,6 +1,5 @@
 import codecs
 import lxml.html
-import settings
 
 def get_token_str_rep(el):
     gram = el.attrib["feat"]

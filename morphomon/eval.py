@@ -4,14 +4,12 @@ from collections import defaultdict
 import multiprocessing
 import os
 from random import shuffle
-import re
 import sys
 import math
 from morphomon.algorithm.hmm_disambig import HMMAlgorithm
 from morphomon.algorithm.mmem_disambig import MMEMAlgorithm
 from morphomon.algorithm.naive import NaiveAlgorithm
-from morphomon.utils import TokenRecord, N_rnc_pos, get_corpus_files, N_default, N_rnc_positional_microsubset, get_diff_between_tokens, parse_token, EOS_TOKEN, split_seq, remove_directory_content, flatten, remove_ambiguity_file_list, get_dirs_from_config
-import settings
+from morphomon.utils import N_rnc_pos, get_corpus_files, get_diff_between_tokens, parse_token, EOS_TOKEN, split_seq, remove_directory_content, flatten, remove_ambiguity_file_list, get_dirs_from_config
 
 __author__ = 'egor'
 
@@ -256,17 +254,18 @@ def cross_validate_inner(i):
     test_corpus_files = flatten(splits[j] for j in range(num_iters) if i == j)
 
     morph_analysis_files = [ os.path.join( morph_analysis_dir, os.path.basename( test_file ) ) for test_file in test_corpus_files if os.path.exists( os.path.join( morph_analysis_dir, os.path.basename( test_file ) ) )]
-
-    if algo_name is ALGONAMES.BASELINE:
+    algo = None
+    if algo_name == ALGONAMES.BASELINE:
         algo = NaiveAlgorithm(N_func=N_func)
         algo.train_from_filelist( train_fold_corpus_files )
-    elif algo_name is ALGONAMES.HMM:
+    elif algo_name == ALGONAMES.HMM:
         algo = HMMAlgorithm(N_filter_func=N_func)
         algo.train_model_from_filelist(corpus_files =  train_fold_corpus_files )
-    elif algo_name is ALGONAMES.MEMM:
+    elif algo_name == ALGONAMES.MEMM:
         algo = MMEMAlgorithm(N_filter_func=N_func)
         algo.train_model_file_list(corpus_filelist =  train_fold_corpus_files, ambiguity_dir = morph_analysis_dir )
-
+    if algo is None:
+        raise Exception("Not supported algorithm {0}".format( algo_name ))
 
     print "Finished training. Starting testing phase!"
     remove_ambiguity_file_list(ambig_filelist=morph_analysis_files, output_dir= algo_dir, algo = algo )
@@ -326,9 +325,11 @@ if __name__=="__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('-cfg', '--config')
     parser.add_argument('-err', '--error')
+    parser.add_argument('-alg','--algorithm')
     args = parser.parse_args()
 
     gold_dir, ambig_dir, algo_dir = get_dirs_from_config( args.config )
 
-    cross_validate(algo_name= ALGONAMES.BASELINE, corpus_dir = gold_dir,
+    algo_name = args.algorithm
+    cross_validate(algo_name= algo_name, corpus_dir = gold_dir,
         algo_dir= algo_dir, morph_analysis_dir= ambig_dir, N_func = N_rnc_pos, error_dir = args.error)

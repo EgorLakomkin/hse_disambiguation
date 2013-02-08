@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 from morphomon.algorithm.statistics import calculate_B, calculate_A, train_B_corpus, train_A_corpus
 from morphomon.utils import get_word_ending,N_rnc_pos,dump_object, load_object
-import settings
 from exercises.egor_viterbi import get_viterbi_path, get_viterbi_probability
 
 
@@ -32,7 +31,7 @@ if __name__=="__main__":
         sentence = raw_input("Введите предложение :")
         sentence = sentence.decode('utf-8')
         print "Вы ввели : ", sentence
-        sentence_obserable = [get_word_ending(word,enging_length=3) for word in sentence.split(' ')]
+        sentence_obserable = [get_word_ending(word, ending_length=3) for word in sentence.split(' ')]
         print "Наблюдаемые состояния : ", ' '.join(sentence_obserable)
         print ' '.join(get_viterbi_path(sentence_obserable,X,Y,A,B,p))
         print get_viterbi_probability(sentence_obserable,X,Y,A,B,p)

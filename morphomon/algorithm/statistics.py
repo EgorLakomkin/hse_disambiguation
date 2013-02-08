@@ -127,7 +127,7 @@ def calculate_B(B, corpus_file,N_filter_func=N_default):
         word_form = token.word
         gram = token.gram
         if token.gram != EOS_TOKEN.gram:
-            ending = get_word_ending(word_form,enging_length=3)
+            ending = get_word_ending(word_form, ending_length=3)
             B[gram][ending] += 1
 
     return B

@@ -36,7 +36,7 @@ class MMEMAlgorithm(object):
             yield "previous-tag={0}".format(   prev_label )
 
         word_form = sentence[i]
-        word_ending = get_word_ending( word_form, enging_length = 3 )
+        word_ending = get_word_ending( word_form, ending_length= 3 )
         yield "word-ending={0}".format( word_ending.encode('utf-8') )
 
         if analysises is not None:
@@ -259,13 +259,3 @@ class MMEMAlgorithm(object):
 
         return zip(words,path)
 
-if __name__=="__main__":
-
-
-    #memm_algo = MMEMAlgorithm(N_filter_func= N_rnc_positional_microsubset)
-    #memm_algo.train_model( corpus_dir= r"/home/egor/disamb_test/test_gold/", ambiguity_dir = r"/home/egor/disamb_test/mystem_txt"  )
-    #memm_algo.save_model(memm_filename =  r"/home/egor/disamb_test/memm_positional_mintagset.dat", B_stat_filename = r"/home/egor/disamb_test/B_stat_pos.dat" )
-    #memm_algo = MMEMAlgorithm(N_filter_func= N_rnc_pos)
-    #memm_algo.load_memm_model( r"/home/egor/disamb_test/memm_pos.dat"  )
-    #remove_ambiguity_dir(corpus_dir = r"/home/egor/disamb_test/test_ambig",output_dir = r"/home/egor/disamb_test/memm_base_tags", algo = memm_algo )
-    pass

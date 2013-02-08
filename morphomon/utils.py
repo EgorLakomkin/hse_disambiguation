@@ -6,10 +6,9 @@ import os
 import pickle
 import re
 import sys
-import multiprocessing
 
-def get_word_ending(word, enging_length = 3):
-    ending = word[-enging_length:]
+def get_word_ending(word, ending_length = 3):
+    ending = word[-ending_length:]
     return ending.lower()
 
 def split_seq(seq, p):
@@ -204,7 +203,7 @@ def find_matching_pos(tag, tag_set = full_tag_set, used_tagset = full_tag_set):
     for possible_tag_lst in tag_set:
         if tag in possible_tag_lst:
             return None
-    print >>sys.stderr, u"Cannot find position for tag - {0}".format( tag )
+    #print >>sys.stderr, u"Cannot find position for tag - {0}".format( tag )
     #raise Exception("no matching tag : {0}".format(tag) )
 
 def N_rnc_positional_microsubset(tag_set):

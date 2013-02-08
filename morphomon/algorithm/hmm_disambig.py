@@ -120,24 +120,3 @@ class HMMAlgorithm(object):
         word_forms = [x[0] for x in variants]
 
         return zip(word_forms,path[::-1])
-
-
-if __name__=="__main__":
-
-
-    #hmm_algo = HMMAlgorithm()
-    #hmm_algo.train_model( corpus_dir= "/home/egor/disamb_test/gold/" , N_filter_func= N_rnc_positional_microsubset)
-    #dump_object( r"/home/egor/disamb_test/hmm_base_tags.dat",  hmm_algo )
-    #hmm_algo = load_object( r"/home/egor/disamb_test/hmm_base_tags.dat"  )
-    #remove_ambiguity_dir(corpus_dir = r"/home/egor/disamb_test/test_ambig",output_dir = r"/home/egor/disamb_test/test_hmm_base_tags", algo = hmm_algo )
-
-    import argparse
-    parser = argparse.ArgumentParser()
-    parser.add_argument('-cfg', '--config')
-    parser.add_argument('-err', '--error')
-    args = parser.parse_args()
-
-    gold_dir, ambig_dir, algo_dir = get_dirs_from_config( args.config )
-
-    cross_validate( corpus_dir = gold_dir, algo_dir= algo_dir,
-        morph_analysis_dir=ambig_dir, N_func = N_rnc_pos, error_dir = args.error )

@@ -348,7 +348,7 @@ def remove_ambiguity_file_list(ambig_filelist, output_dir, algo):
     _RA_OUTPUT = output_dir
     _RA_ALGO = algo
     pool = multiprocessing.Pool()
-    n = pool.map(_inner_, ambig_filelist)
+    n = pool.map(remove_ambiguity_file_list_inner, ambig_filelist)
     n = sum(1 for x in n if x)
     print "Processed {0} files out of {1}".format(n, len(ambig_filelist))
 

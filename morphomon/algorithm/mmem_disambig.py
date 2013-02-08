@@ -8,11 +8,16 @@ import maxent
 import sys
 from morphomon.algorithm.statistics import train_B_corpus
 from morphomon.eval import calculate_dir_precision, M_strict_mathcher, P_no_garbage
-from morphomon.utils import N_rnc_pos, dump_object, get_tokens_from_file, EOS_TOKEN, get_tokens_from_directory, N_default, load_object, remove_ambiguity_dir, get_word_ending, N_rnc_positional, pos_tagset, N_rnc_positional_microsubset, get_corpus_files, remove_directory_content, remove_ambiguity_file_list, N_rnc_positional_modified_tagset
+from morphomon.utils import N_rnc_pos, dump_object, get_tokens_from_file, EOS_TOKEN, get_tokens_from_directory, N_default, load_object, remove_ambiguity_dir, get_word_ending, N_rnc_positional, pos_tagset, N_rnc_positional_microsubset, get_corpus_files, remove_directory_content, remove_ambiguity_file_list, N_rnc_positional_modified_tagset, get_gender, get_case, get_number
 from maxent import MaxentModel
 
 __author__ = 'egor'
 
+PREPS = ['за','путём','вво','позади','со','близ','от','после','включая','ввиду','помимо','из-за','против','до','наперекор','для','насчёт',
+         'перд','ко','кончая','вслед','возле','вне','вопреки','перед','передо','над','посреди','наподобие','а-ля','внутри','благодаря','кроме',
+         'изо','вследствие','без','через','вдоль','спустя','безо','среди','вместо','прежде','по','при','о','у','вблизи','обо','к','подобно',
+         'во','про','вроде','из','касательно','меж','проо','ради','на','из-под','под','относительно','сверху','мимо','посредством','согласно',
+         'вокруг','между','ото','накануне','сквозь','в','об','около','сверх','с','минус','средь']
 
 class MMEMAlgorithm(object):
 
@@ -20,6 +25,7 @@ class MMEMAlgorithm(object):
     def __init__(self, N_filter_func = N_default):
         self.filter_func = N_filter_func
         self.me = MaxentModel()
+        self.num_train_iters = 50
 
     def load_memm_model(self, filename):
         self.me.load( filename  )
@@ -27,7 +33,7 @@ class MMEMAlgorithm(object):
     def init(self):
         pass
 
-    def compute_features( self, sentence , i, prev_label, analysises):
+    def compute_features( self, sentence , i, prev_label, analysises, labels):
 
         if prev_label is not None:
             yield "previous-tag={0}".format(   prev_label )
@@ -40,52 +46,101 @@ class MMEMAlgorithm(object):
             for analysis in analysises:
                 yield "has_analysis={0}".format( analysis )
 
+        if len(sentence[i]) <= 3:
+            yield "is={0}".format(sentence[i].encode('utf-8'))
+
+        n = len( sentence )
+        for k in xrange(max(0, i - 2), min(n, i + 3)):
+            if sentence[k].encode('utf-8') in PREPS:
+                yield "has preposition {0} at {1}".format(sentence[k].encode('utf-8'), k - i)
+
+        #совпадение по числу.падежу, роду
+        if labels:
+            for k in xrange( max(0, i -2 ), i ):
+                if get_gender( labels[k] ) == get_gender( labels[i] ) and get_gender( labels[i] ):
+                    yield "has same gender at pos {1}".format(sentence[k].encode('utf-8'), k - i)
+                if get_case( labels[k] ) == get_case( labels[i] ) and get_case( labels[i] ):
+                    yield "has same case at pos {1}".format(sentence[k].encode('utf-8'), k - i)
+                if get_number( labels[k] ) == get_number( labels[i] ) and get_number( labels[i] ):
+                    yield "has same gender at pos {1}".format(sentence[k].encode('utf-8'), k - i)
+
+
+
     def train_model_file_list(self, corpus_filelist, ambiguity_dir ):
         self.me.begin_add_event()
         #self.B = train_B_corpus(corpus_dir = corpus_dir,N_filter_func = N_filter_func)
-        sentence = []
+
         total = 0
         skipped = 0
         for corpus_file in corpus_filelist:
             print "Training on file {0}".format( corpus_file )
+            sentence = []
             morph_analys_file = os.path.join( ambiguity_dir, os.path.basename( corpus_file ) )
 
             morph_analys_tokens = get_tokens_from_file(morph_analys_file, N_filter_func = self.filter_func ) if os.path.exists( morph_analys_file ) else None
             if morph_analys_tokens:
                 print "Using mystem features on file {0}".format( morph_analys_file )
-            for corpus_token in get_tokens_from_file(corpus_file, N_filter_func = self.filter_func ):
 
-                try:
-                    morph_analys_token = morph_analys_tokens.next() if morph_analys_tokens else None
-                except StopIteration:
-                    morph_analys_token = None
+            gold_tokens = get_tokens_from_file(corpus_file, N_filter_func = self.filter_func )
+            for corpus_token in gold_tokens:
 
-                total+=1
-                if corpus_token[0] == EOS_TOKEN:
+                morph_analys_token = morph_analys_tokens.next() if morph_analys_tokens else None
+
+
+                gold_token_word = corpus_token[0].word
+                morph_analys_token_word = morph_analys_token[0].word if morph_analys_token else None
+                if morph_analys_token_word:
+                    if gold_token_word != morph_analys_token_word:
+                        '''
+                        if ('-' in gold_token_word and '-' not in morph_analys_token_word) or ('\'' in gold_token_word and '\'' not in morph_analys_token_word):
+                            morph_analys_token = morph_analys_tokens.next()
+                        if ('.' in gold_token_word):
+                            cnt_dots = '.'.count( gold_token_word )
+                            for i in xrange( 0, cnt_dots ):
+                                morph_analys_token = morph_analys_tokens.next()
+                        '''
+                        print >>sys.stderr, u"Start skipping sentence. Gold token wordform {0} morph token wordform {1}".format( gold_token_word, morph_analys_token_word )
+
+                        sentence = []
+                        try:
+                            next_gold = gold_tokens.next()
+                            while( next_gold !=  [EOS_TOKEN] ):
+                                next_gold = gold_tokens.next()
+
+                            next_gold = gold_tokens.next()
+                            next_morph = morph_analys_tokens.next()
+                            while( next_morph[0].word != next_gold[0].word ):
+                                next_morph = morph_analys_tokens.next()
+
+                        except StopIteration:
+                            break
+
+
+
+                if corpus_token[0] == EOS_TOKEN and len(sentence) > 0:
                     words = [token[0].word for token in sentence]
                     labels = [token[0].gram for token in sentence]
                     for i,token_info in enumerate( sentence ):
                         gold_token = token_info[0]
-                        morph_analysises = [token.gram for token in token_info[1]] if morph_analys_token else None
-                        if morph_analys_token:
+                        morph_analysises = [token.gram for token in token_info[1]] if token_info[1] and morph_analys_token else None
+
+                        if token_info[1] is not None:
                             if gold_token.word != token_info[1][0].word:
                                 print >>sys.stderr, u"Cannot match gold token and morph analysis token\n gold token : {0}     morph analysis token : {1}".format( gold_token.word, token_info[1][0].word )
                                 morph_analysises = None
-                                skipped +=1
-                        word_features = list( self.compute_features( sentence = words, i = i , prev_label= labels[ i - 1 ] if i >0 else None, analysises = morph_analysises) )
+
+                        word_features = list( self.compute_features( sentence = words, i = i , prev_label= labels[ i - 1 ] if i >0 else None, analysises = morph_analysises, labels = labels) )
                         gold_token_gram = gold_token.gram.encode('utf-8')
                         self.me.add_event(word_features, gold_token_gram )
                     sentence = []
-                    continue
+                else:
+                    sentence.append( (corpus_token[0], morph_analys_token)  )
 
-
-                sentence.append( (corpus_token[0], morph_analys_token)  )
 
         self.me.end_add_event()
         maxent.set_verbose(1)
-        self.me.train( 1000, 'lbfgs', 0.0 )
+        self.me.train( self.num_train_iters, 'lbfgs', 0.0 )
         maxent.set_verbose(0)
-        print "Percent skipped {0}".format( skipped*100.0/total )
 
     def train_model(self, corpus_dir, ambiguity_dir ):
         self.me.begin_add_event()
@@ -110,18 +165,16 @@ class MMEMAlgorithm(object):
                         if gold_token.word != token_info[1][0].word:
                             print >>sys.stderr, u"Cannot match gold token and morph analysis token\n gold token : {0}     morph analysis token : {1}".format( gold_token.word, token_info[1][0].word )
                             morph_analysises = None
-                        word_features = list( self.compute_features( sentence = words, i = i , prev_label= labels[ i - 1 ] if i >0 else None, analysises = morph_analysises) )
+                        word_features = list( self.compute_features( sentence = words, i = i , prev_label= labels[ i - 1 ] if i >0 else None, analysises = morph_analysises, labels = labels) )
                         gold_token_gram = gold_token.gram.encode('utf-8')
                         self.me.add_event(word_features, gold_token_gram )
                     sentence = []
-                    continue
-
-
-                sentence.append( (corpus_token[0], morph_analys_token)  )
+                else:
+                    sentence.append( (corpus_token[0], morph_analys_token)  )
 
         self.me.end_add_event()
         maxent.set_verbose(1)
-        self.me.train( 1000, 'lbfgs', 0.0 )
+        self.me.train( 50, 'lbfgs', 0.0 )
         maxent.set_verbose(0)
 
 
@@ -163,7 +216,7 @@ class MMEMAlgorithm(object):
         viterbi_backpointers = [ None for i in xrange(len(words) + 1) ]
 
         # Compute first layer directly.
-        viterbi_layers[0] = self.me.eval_all(list(self.compute_features(sentence=words, i = 0 , prev_label= None, analysises = analysises[0] ) ) )
+        viterbi_layers[0] = self.me.eval_all(list(self.compute_features(sentence=words, i = 0 , prev_label= None, analysises = analysises[0], labels = None ) ) )
 
         filtered_viterbi_layer = dict( (k, v) for k, v in viterbi_layers[0] if k in analysises[0] )
         viterbi_layer_0_prob = sum( [v for v in filtered_viterbi_layer.values() ]  )
@@ -177,9 +230,13 @@ class MMEMAlgorithm(object):
             viterbi_layers[i] = defaultdict(lambda: float("-inf"))
             viterbi_backpointers[i] = defaultdict(lambda: None)
             for prev_label, prev_logprob in viterbi_layers[i - 1].iteritems():
-                features = self.compute_features(sentence=words,i= i, prev_label= prev_label, analysises = analysises[i])
+                features = self.compute_features(sentence=words,i= i, prev_label= prev_label, analysises = analysises[i], labels = None)
                 features = list(features)
-                for label, prob in self.me.eval_all(features):
+                distribution =  self.me.eval_all(features)
+                distribution = dict( (label, prob) for label, prob in  distribution if label in analysises[i])
+                distribution_sum = sum( [v for v in distribution.values() ]  )
+                distribution = dict( (k, v/ distribution_sum) for k, v in distribution.items() )
+                for label, prob in distribution.items():
                     logprob = math.log(prob)
                     if prev_logprob + logprob > viterbi_layers[i][label]:
                         viterbi_layers[i][label] = prev_logprob + logprob
@@ -205,12 +262,15 @@ class MMEMAlgorithm(object):
 
         return zip(words,path)
 
-def memm_cross_validate(corpus_dir, algo_dir, morph_analysis_dir, N_func):
+def memm_cross_validate(corpus_dir, algo_dir, morph_analysis_dir, N_func, P):
 
     corpus_files = get_corpus_files(corpus_dir)
 
     results = []
-    for i in range(1,2):
+
+    num_iters = 2
+
+    for i in range(1,num_iters + 1):
         shuffle( corpus_files )
         remove_directory_content(algo_dir)
         print "Starting {0} fold".format( i )
@@ -226,14 +286,33 @@ def memm_cross_validate(corpus_dir, algo_dir, morph_analysis_dir, N_func):
         print "Finished training. Starting testing phase!"
         remove_ambiguity_file_list(ambig_filelist=morph_analysis_files_test, output_dir= algo_dir, algo = memm_algo )
         print "Finished working of algo. Starting measuring phase"
-        total_correct_known, total_correct_unknown, total_known, total_unknown = calculate_dir_precision( algo_dir = algo_dir, ambi_dir= morph_analysis_dir, gold_dir =  corpus_dir, M = M_strict_mathcher, N =  N_func, P = P_no_garbage,
+        total_correct_known, total_correct_unknown, total_known, total_unknown, upper_bound  = calculate_dir_precision( algo_dir = algo_dir, ambi_dir= morph_analysis_dir, gold_dir =  corpus_dir, M = M_strict_mathcher, N =  N_func, P = P_no_garbage,
             errors_context_filename = r"/home/egor/disamb_test/hmm_errors_context_{0}.txt".format( i ),
             errors_statistics_filename = r"/home/egor/disamb_test/hmm_errors_statistics_{0}.txt".format( i ))
-        results.append((total_correct_known, total_correct_unknown, total_known, total_unknown ) )
-    avg_known_prec = sum([result[0] for result in results]) * 100.0 / sum([result[2] for result in results])
-    avg_unknown_prec = sum([result[1] for result in results]) * 100.0 / sum([result[3] for result in results])
+        results.append((total_correct_known, total_correct_unknown, total_known, total_unknown, upper_bound  ) )
+
+    avg_prec = sum([(result[0]+result[1])*100.0/(result[2] + result[3]) for result in results])  / len( results )
+    std_dev = math.sqrt( sum([ ((result[0]+result[1])*100.0/(result[2] + result[3])- avg_prec)* ((result[0]+result[1])*100.0/(result[2] + result[3]) - avg_prec) for result in results ] )  / num_iters )
+
+    avg_known_prec = sum([result[0]*100.0/result[2] for result in results])  / len( results )
+    avg_unknown_prec = sum([result[1]*100.0/result[3] for result in results])  / len( results )
+    std_dev_known = math.sqrt( sum([ (result[0]*100.0/result[2]- avg_known_prec)* (result[0]*100.0/result[2] - avg_known_prec) for result in results ] )  / num_iters )
+    std_dev_unknown = math.sqrt( sum([ (result[1]*100.0/result[3]- avg_unknown_prec)* (result[1]*100.0/result[3] - avg_unknown_prec) for result in results ] )  / num_iters )
+    avg_upper_bound = sum([result[4]*100.0/(result[2]+result[3]) for result in results])  / len( results )
+
+    stdev_upper_bound = math.sqrt( sum([ (result[4]*100.0/(result[2]+result[3]) - avg_upper_bound)* (result[4]*100.0/(result[2]+result[3]) - avg_upper_bound )  for result in results ]  )  / num_iters )
+
+    print "Total Average precision  : {0}%".format( avg_prec )
+    print "Total StdDev  : {0}%".format( std_dev)
+
     print "Average precision known : {0}%".format( avg_known_prec )
+    print "StdDev known : {0}%".format( std_dev_known )
+
     print "Average precision unknown : {0}%".format( avg_unknown_prec )
+    print "StdDev unknown : {0}%".format( std_dev_unknown )
+    print "Average upper bound : {0}%".format( avg_upper_bound )
+
+    print "StdDev upperbound : {0}%".format( stdev_upper_bound )
 
 if __name__=="__main__":
 
@@ -244,4 +323,4 @@ if __name__=="__main__":
     #memm_algo = MMEMAlgorithm(N_filter_func= N_rnc_pos)
     #memm_algo.load_memm_model( r"/home/egor/disamb_test/memm_pos.dat"  )
     #remove_ambiguity_dir(corpus_dir = r"/home/egor/disamb_test/test_ambig",output_dir = r"/home/egor/disamb_test/memm_base_tags", algo = memm_algo )
-    memm_cross_validate( corpus_dir = "/home/egor/disamb_test/gold/", algo_dir= "/home/egor/disamb_test/memm_pos", morph_analysis_dir= r"/home/egor/disamb_test/mystem_txt", N_func = N_rnc_positional_modified_tagset )
+    memm_cross_validate( corpus_dir = "/home/egor/disamb_test/test_gold/", algo_dir= "/home/egor/disamb_test/memm_modified_tags", morph_analysis_dir= r"/home/egor/disamb_test/test_ambig", N_func = N_rnc_positional_modified_tagset , P = P_no_garbage)

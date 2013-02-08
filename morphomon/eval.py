@@ -56,8 +56,8 @@ def calculate_precision(file_algo_name, file_gold_standart_name, file_ambi_name,
     correct_unknown = 0.0
     max_value_known = 0.0
     max_value_unknown = 0.0
+    upper_bound = 0.0
 
-    skipped = 0
     errors = defaultdict( float )
 
     context = []
@@ -72,6 +72,7 @@ def calculate_precision(file_algo_name, file_gold_standart_name, file_ambi_name,
 
         gold_token_record = parse_token( line_gold, N_filter_func=N)[0]
         algo_token_record = parse_token( line_algo, N_filter_func=N)[0]
+        ambig_token_records = parse_token( line_ambi, N_filter_func=N)
 
         ERROR = 1
         OK = 0
@@ -80,22 +81,41 @@ def calculate_precision(file_algo_name, file_gold_standart_name, file_ambi_name,
         if gold_token_record.word!= algo_token_record.word:
             print >>sys.stderr, u"Gold and algo files does not match. Gold line : {0} \nAlgo line  : {1}".format( line_gold,line_algo  )
             #пропускаем все предложение где есть слова с съехавшими не совпали словоформы
-            skip_line = algo_f.readline().strip()
-            while len(skip_line)>0:
-                skip_line = algo_f.readline().strip()
 
-            skip_line = ambi_f.readline().strip()
-            while len(skip_line)>0:
+            try:
+                skip_line = gold_f.readline().strip()
+                while len(skip_line)>0:
+                    skip_line = gold_f.readline().strip()
+                skip_line = gold_f.readline().strip()
+                gold_token = parse_token( skip_line, N_filter_func=N)[0]
+
                 skip_line = ambi_f.readline().strip()
+                ambi_token = parse_token( skip_line, N_filter_func=N)
+                while ambi_token[0].word != gold_token.word:
+                    skip_line = ambi_f.next().strip()
+                    ambi_token = parse_token( skip_line, N_filter_func=N)
 
-            skip_line = gold_f.readline().strip()
-            while len(skip_line)>0:
-                skip_line = gold_f.next().strip()
-            continue
+                skip_line = algo_f.readline().strip()
+                algo_f_token = parse_token( skip_line, N_filter_func=N)[0]
+
+                while algo_f_token.word != gold_token.word:
+                    skip_line = algo_f.readline().strip()
+                    algo_f_token = parse_token( skip_line, N_filter_func=N)[0]
+
+                gold_token_record = gold_token
+                algo_token_record = algo_f_token
+                ambig_token_records = ambi_token
+            except StopIteration:
+                continue
+
+
+
 
         if gold_token_record == EOS_TOKEN:
             context.append( (None, None, EOS) )
             continue
+
+
 
         if P(gold_token_record) > 0:
             result_m = M( algo_token_record, gold_token_record)
@@ -116,6 +136,14 @@ def calculate_precision(file_algo_name, file_gold_standart_name, file_ambi_name,
             diff = get_diff_between_tokens( gold_token_record, algo_token_record )
             for error in diff:
                 errors[ error[0] ] += 1
+
+            #считаем верхнюю границу
+            results_ambig = sum([  M( ambig_token, gold_token_record) for ambig_token in ambig_token_records ])
+            if results_ambig > 0.0:
+                upper_bound += 1.0
+            else:
+                pass
+
         else:
             context.append( (gold_token_record, algo_token_record, OK) )
 
@@ -153,7 +181,7 @@ def calculate_precision(file_algo_name, file_gold_standart_name, file_ambi_name,
     algo_f.close()
     gold_f.close()
     ambi_f.close()
-    return correct_unknown, correct_known, max_value_unknown, max_value_known,errors
+    return correct_unknown, correct_known, max_value_unknown, max_value_known,errors, upper_bound
 
 
 def calculate_dir_precision(algo_dir, gold_dir, ambi_dir, M , N, P, errors_context_filename, errors_statistics_filename):
@@ -165,6 +193,7 @@ def calculate_dir_precision(algo_dir, gold_dir, ambi_dir, M , N, P, errors_conte
     total_known = 0
     total_correct_unknown = 0
     total_correct_known = 0
+    total_upperbound = 0
     total_error_stats = defaultdict(float)
     for algo_file in algo_files:
         print "Evaluating file {0}".format( algo_file )
@@ -172,7 +201,7 @@ def calculate_dir_precision(algo_dir, gold_dir, ambi_dir, M , N, P, errors_conte
         gold_file = os.path.join( gold_dir, os.path.basename( algo_file ) )
 
         if os.path.exists( algo_file ) and os.path.exists( gold_file ):
-            cur_correct_unknown, cur_correct_known, cur_total_unknown, cur_total_known,errors = calculate_precision( file_algo_name= algo_file, file_gold_standart_name= gold_file,
+            cur_correct_unknown, cur_correct_known, cur_total_unknown, cur_total_known,errors, cur_upper_bound = calculate_precision( file_algo_name= algo_file, file_gold_standart_name= gold_file,
                 file_ambi_name = ambi_file, M=M , N=N, P=P,
                 errors_context_filename = errors_context_filename,
                 errors_statistics_filename = errors_statistics_filename )
@@ -182,12 +211,17 @@ def calculate_dir_precision(algo_dir, gold_dir, ambi_dir, M , N, P, errors_conte
             total_correct_unknown += cur_correct_unknown
             total_correct_known += cur_correct_known
             total_correct = total_correct_unknown + total_correct_known
+            total_upperbound += cur_upper_bound
 
             for k,v in errors.iteritems():
                 total_error_stats[k] += v
 
             print "percent correct (total)", int(float(total_correct)/total*100)
             print "percent correct (known words)", int(float(total_correct_known)/total_known*100)
+
+            print "percent (upper bound words)", int(float(total_upperbound)/total*100)
+
+
             if total_unknown:
                 print "percent correct (unknown words)", int(float(total_correct_unknown)/total_unknown*100)
 
@@ -197,7 +231,7 @@ def calculate_dir_precision(algo_dir, gold_dir, ambi_dir, M , N, P, errors_conte
 
             num+=1
             print "{0} file processed. {1}%".format(gold_file, num/(len(algo_files)+0.0)*100 )
-    return total_correct_known, total_correct_unknown, total_known, total_unknown
+    return total_correct_known, total_correct_unknown, total_known, total_unknown, total_upperbound
 
 if __name__=="__main__":
     print calculate_dir_precision(gold_dir=  r"/home/egor/disamb_test/gold/",algo_dir=r"/home/egor/disamb_test/test_hmm_base_tags",

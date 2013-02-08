@@ -143,6 +143,18 @@ used_micro_tag_subset = [ pos_tag, gender_tags, number_tags, case_tags, person_t
 used_modified_tag_subset = [ pos_tag, gender_tags, number_tags, case_tags, person_tags,time_tags, naklon_tags ]
 
 
+def get_gender(positiona_tag_set):
+    tag_set = positiona_tag_set.split(',')
+    return tag_set[1] if len(tag_set)>1 and len(tag_set[1]) > 0 else None
+
+def get_case(positiona_tag_set):
+    tag_set = positiona_tag_set.split(',')
+    return tag_set[4] if len(tag_set) > 5 and len(tag_set[4]) > 0 else None
+
+def get_number(positiona_tag_set):
+    tag_set = positiona_tag_set.split(',')
+    return tag_set[3] if len(tag_set) > 4 and len(tag_set[3]) > 0 else None
+
 def find_matching_pos(tag, tag_set = full_tag_set, used_tagset = full_tag_set):
     for index, possible_tag_lst in enumerate(tag_set):
         if possible_tag_lst in used_tagset:
@@ -158,6 +170,19 @@ def find_matching_pos(tag, tag_set = full_tag_set, used_tagset = full_tag_set):
 
 def N_rnc_positional_microsubset(tag_set):
     return N_rnc_positional( tag_set = tag_set, used_tagset = used_micro_tag_subset )
+
+def N_rnc_positional_modified_pos(tag_set):
+    tag_set = N_ruscorpora_tagset_base_preprocess(tag_set.lower())
+    if 'a,' in tag_set and 'brev' in tag_set:
+        tag_set = tag_set.replace('brev', '')
+        tag_set = tag_set.replace('a,', 'abrev,',1)
+    elif 'v,' in tag_set and 'partcp' in tag_set:
+        tag_set = tag_set.replace('partcp', '')
+        tag_set = tag_set.replace('v,', 'vpartcp,',1)
+    elif 'v,' in tag_set and 'ger' in tag_set:
+        tag_set = tag_set.replace('ger', '')
+        tag_set = tag_set.replace('v,', 'vger,',1)
+    return N_rnc_pos(tag_set)
 
 def N_rnc_positional_modified_tagset(tag_set):
     tag_set = N_ruscorpora_tagset_base_preprocess(tag_set.lower())
@@ -332,6 +357,13 @@ def get_diff_between_tokens(token1, token2):
             lst_errors.append( (full_tag_set_str[idx], idx) )
     return lst_errors
 
+def get_corpora_preps(corpus_dir):
+    preps = set()
+    for token in get_tokens_from_directory(corpus_dir, N_filter_func = N_rnc_pos):
+        if 'pr' == token[0].gram:
+            preps.add( '\'' + token[0].word.lower() + '\'')
+    #preps = [prep.encode('utf-8') for prep in preps]
+    return preps
+
 if __name__ == "__main__":
-    print N_rnc_positional_modified_tagset("V=pl,dat,tran=partCp,f,brev,ger,voc")
-    print N_rnc_positional_modified_tagset("V=pl,dat,tran=partCp,m-f,brev,ger,voc")
+    print  N_rnc_positional_modified_pos('v,pl,ger')

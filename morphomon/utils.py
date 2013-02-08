@@ -162,6 +162,9 @@ filter_tags = ['norm','bastard']
 used_micro_tag_subset = [ pos_tag, gender_tags, number_tags, case_tags, person_tags,time_tags, naklon_tags ]
 used_modified_tag_subset = [ pos_tag, gender_tags, number_tags, case_tags, person_tags,time_tags, naklon_tags ]
 
+def get_pos(positiona_tag_set):
+    tag_set = positiona_tag_set.split(',')
+    return tag_set[0] if len(tag_set)>0 and len(tag_set[0]) > 0 else None
 
 def get_gender(positiona_tag_set):
     tag_set = positiona_tag_set.split(',')
@@ -385,13 +388,25 @@ def get_corpora_preps(corpus_dir):
     #preps = [prep.encode('utf-8') for prep in preps]
     return preps
 
-def get_corpora_preps(corpus_dir):
-    preps = set()
-    for token in get_tokens_from_directory(corpus_dir, N_filter_func = N_rnc_pos):
-        if 'pr' == token[0].gram:
-            preps.add( '\'' + token[0].word.lower() + '\'')
-    #preps = [prep.encode('utf-8') for prep in preps]
-    return preps
+def sub_plurative(token, pluratives ):
+    token_wf = token.word
+    if token_wf in pluratives:
+        token_gram = token.gram
+        pos_tag = token_gram.split(',')
+        set_gender(pos_tag)
 
-if __name__ == "__main__":
-    print  N_rnc_positional_modified_pos('v,pl,ger')
+def get_corpora_pluratives(corpus_dir):
+    pluratives = set()
+    for token in get_tokens_from_directory(corpus_dir, N_filter_func = N_rnc_positional_modified_tagset):
+        token_gram = token[0].gram
+
+        token_gender = get_gender( token_gram )
+        token_number = get_number( token_gram )
+        if token_number == 'pl' and token_gender is None and get_pos( token_gram ) == 's':
+            pluratives.add( token[0].lemma.lower() )
+    #preps = [prep.encode('utf-8') for prep in preps]
+    return pluratives
+
+if __name__ == "__main__":    
+    pluratives = get_corpora_pluratives(corpus_dir= r"/home/egor/disamb_test/gold/" ):
+    

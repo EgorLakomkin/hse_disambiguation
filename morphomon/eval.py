@@ -278,8 +278,8 @@ def cross_validate_inner(i):
     remove_ambiguity_file_list(ambig_filelist=morph_analysis_files, output_dir= algo_dir, algo = algo )
     print "Finished working of algo. Starting measuring phase"
     total_correct_known, total_correct_unknown, total_known, total_unknown, upper_bound_known,upper_bound_unknown  = calculate_dir_precision( algo_dir = algo_dir, ambi_dir= morph_analysis_dir, gold_dir =  corpus_dir, M = M_strict_mathcher, N =  N_func, P = P_no_garbage,
-        errors_context_filename = os.path.join(error_dir, "naive_errors_context_{0}.txt".format( i )),
-        errors_statistics_filename = os.path.join(error_dir, "naive_errors_statistics_{0}.txt".format( i )) )
+        errors_context_filename = os.path.join(error_dir, "{1}_errors_context_{0}.txt".format( i , algo_name )),
+        errors_statistics_filename = os.path.join(error_dir, "{1}_errors_statistics_{0}.txt".format( i , algo_name )) )
 
     return (total_correct_known, total_correct_unknown, total_known, total_unknown, upper_bound_known,upper_bound_unknown )
 

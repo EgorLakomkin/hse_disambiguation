@@ -298,45 +298,31 @@ def cross_validate(num_iters, algo_name, corpus_dir, algo_dir, morph_analysis_di
     pool.close()
     pool.join()
 
-    # TODO: Check for ZeroDivisionError here.
-    avg_prec = sum([(result[0]+result[1])/(result[2] + result[3]) for result in results])  / len( results )
-    std_dev = math.sqrt( sum([ ((result[0]+result[1])*100.0/(result[2] + result[3])- avg_prec)* ((result[0]+result[1])/(result[2] + result[3]) - avg_prec) for result in results ] )  / num_iters )
+    def summary(seq):
+        q, s, n = 0.0, 0.0, 0.0
+        for x in seq:
+            q += x * x
+            s += x
+            n += 1.0
+        avg = s / n
+        dev = q / n - avg ** 2
+        return avg, dev
 
-    avg_known_prec = sum([result[0]/result[2] for result in results])  / len( results )
-    avg_unknown_prec = sum([result[1]/result[3] for result in results])  / len( results )
-    std_dev_known = math.sqrt( sum([ (result[0]/result[2]- avg_known_prec)* (result[0]/result[2] - avg_known_prec) for result in results ] )  / num_iters )
-    std_dev_unknown = math.sqrt( sum([ (result[1]/result[3]- avg_unknown_prec)* (result[1]/result[3] - avg_unknown_prec) for result in results ] )  / num_iters )
+    prec         = list( (tck + tcu) / (tk + tu) for tck, tcu, tk, tu, _, _ in results )
+    known_prec   = list( tck / tk                for tck, tcu, tk, tu, _, _ in results )
+    unknown_prec = list( tcu / tu                for tck, tcu, tk, tu, _, _ in results )
 
-    avg_upper_bound_known = sum([result[4]/(result[2]+result[3]) for result in results])  / len( results )
+    ub_known     = list( ubk / tk for tck, tcu, tk, tu, ubk, ubu in results )
+    ub_unknown   = list( ubu / tu for tck, tcu, tk, tu, ubk, ubu in results )
 
-    stdev_upper_bound_known = math.sqrt( sum([ (result[4]/(result[2]+result[3]) - avg_upper_bound_known)* (result[4]/(result[2]+result[3]) - avg_upper_bound_known )  for result in results ]  )  / num_iters )
-
-    avg_upper_bound_unknown = sum([result[5]/(result[2]+result[3]) for result in results])  / len( results )
-
-    stdev_upper_bound_unknown = math.sqrt( sum([ (result[5]/(result[2]+result[3]) - avg_upper_bound_unknown)* (result[5]/(result[2]+result[3]) - avg_upper_bound_unknown )  for result in results ]  )  / num_iters )
-
-
-    print "Total Average precision  : {0}%".format( avg_prec*100 )
-    print "Total StdDev  : {0}%".format( std_dev*100)
-
-    print "Average precision known : {0}%".format( avg_known_prec*100 )
-    print "StdDev known : {0}%".format( std_dev_known*100 )
-
-    print "Average precision unknown : {0}%".format( avg_unknown_prec*100 )
-    print "StdDev unknown : {0}%".format( std_dev_unknown*100 )
-
-    print "Average upper bound known: {0}%".format( avg_upper_bound_known*100 )
-
-    print "StdDev upperbound known: {0}%".format( stdev_upper_bound_known *100)
-
-    print "Average upper bound unknown: {0}%".format( avg_upper_bound_unknown*100 )
-
-    print "StdDev upperbound unknown : {0}%".format( stdev_upper_bound_unknown *100)
-
-
-    print "Finished {0} algorithm with {1} tagset".format( algo_name, N_func )
-    print results
-
+    print "RESULT:         total precision: {0:.4f}% +- {1:.4f}%".format(*summary(prec))
+    print "RESULT:      by-known precision: {0:.4f}% +- {1:.4f}%".format(*summary(known_prec))
+    print "RESULT:    by-unknown precision: {0:.4f}% +- {1:.4f}%".format(*summary(unknown_prec))
+    print "RESULT:   upper bound by knowns: {0:.4f}% +- {1:.4f}%".format(*summary(ub_known))
+    print "RESULT: upper bound by unknowns: {0:.4f}% +- {1:.4f}%".format(*summary(ub_unknown))
+    print "RESULT: " # Just a separator.
+    print "RESULT: Finished {0} algorithm with {1} tagset".format( algo_name, N_func )
+    print "RESULT: Raw: " + repr(results)
 
 if __name__=="__main__":
 

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 N=5
-R=/home/egor.lakomkin/
+R=/home/egor.lakomkin
 T=$(date +%Y%m%d_%H%M)
 
 export PYTHONPATH=${R}/hse_disambiguation/

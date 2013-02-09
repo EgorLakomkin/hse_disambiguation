@@ -5,7 +5,7 @@ import math
 import os
 import maxent
 import sys
-from morphomon.utils import get_tokens_from_file, EOS_TOKEN, N_default, load_object, remove_ambiguity_dir, get_word_ending, N_rnc_positional, pos_tagset, N_rnc_positional_microsubset, get_corpus_files, remove_directory_content, remove_ambiguity_file_list, N_rnc_positional_modified_tagset, get_gender, get_case, get_number, get_dirs_from_config
+from morphomon.utils import *
 from maxent import MaxentModel
 
 __author__ = 'egor'

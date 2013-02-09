@@ -212,7 +212,7 @@ def find_matching_pos(tag, tag_set = full_tag_set, used_tagset = full_tag_set):
 def N_rnc_positional_microsubset(tag_set):
     return N_rnc_positional( tag_set = tag_set, used_tagset = used_micro_tag_subset )
 
-def N_rnc_positional_modified_pos(tag_set):
+def N_rnc_modified_pos(tag_set):
     tag_set = N_ruscorpora_tagset_base_preprocess(tag_set.lower())
     if 'a,' in tag_set and 'brev' in tag_set:
         tag_set = tag_set.replace('brev', '')
@@ -225,7 +225,7 @@ def N_rnc_positional_modified_pos(tag_set):
         tag_set = tag_set.replace('v,', 'vger,',1)
     return N_rnc_pos(tag_set)
 
-def N_rnc_positional_modified_tagset(tag_set):
+def N_rnc_modified_positional_microsubset(tag_set):
     tag_set = N_ruscorpora_tagset_base_preprocess(tag_set.lower())
     if 'a,' in tag_set and 'brev' in tag_set:
         tag_set = tag_set.replace('brev', '')
@@ -412,7 +412,7 @@ def get_corpora_preps(corpus_dir):
 
 def get_corpora_pluratives(corpus_dir):
     pluratives = set()
-    for token in get_tokens_from_directory(corpus_dir, N_filter_func = N_rnc_positional_modified_tagset):
+    for token in get_tokens_from_directory(corpus_dir, N_filter_func = N_rnc_modified_positional_microsubset):
         token_gram = token[0].gram
 
         token_gender = get_gender( token_gram )
@@ -432,6 +432,6 @@ def get_dirs_from_config( cfg_file ):
     return gold_dir, ambig_dir, algo_dir
 
 tag_set_name_N = {'pos' : N_rnc_pos, 'base_tags' : N_rnc_positional_microsubset,
-                  'new_pos' : N_rnc_positional_modified_pos, 'new_base_tags' : N_rnc_positional_modified_tagset }
+                  'new_pos' : N_rnc_modified_pos, 'new_base_tags' : N_rnc_modified_positional_microsubset }
 
 

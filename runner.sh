@@ -4,6 +4,7 @@ N=5
 R=/home/egor.lakomkin
 T=$(date +%Y%m%d_%H%M)
 
+export PYTHONIOENCODING=utf-8
 export PYTHONPATH=${R}/hse_disambiguation/
 
 function run() {
@@ -12,7 +13,7 @@ function run() {
 
   echo "*** Starting algorithm '$1' on '$2' at $(date)"
 
-  python morphomon/eval.py \
+  python -u morphomon/eval.py \
     --num_iters=$N \
     --err ${R}/errors/ \
     --gold_dir=${R}/data/rnc_gold/ \

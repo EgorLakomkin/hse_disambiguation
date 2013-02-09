@@ -29,8 +29,6 @@ for b in pos base_tags new_pos new_base_tags ; do
   cout=${R}/logs/run_${T}_${a}_${b}.stdout.txt
   cerr=${R}/logs/run_${T}_${a}_${b}.stderr.txt
 
-  ( run $a $b | tee $cout ) 3>&1 1>&2 2>&3 | tee $cerr &
+  ( run $a $b | tee $cout ) 3>&1 1>&2 2>&3 | tee $cerr
 done
-wait
 done
-wait

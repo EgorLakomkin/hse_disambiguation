@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import ConfigParser
 import codecs
-from collections import namedtuple
+from collections import namedtuple, defaultdict
 import os
 import pickle
 import re
@@ -439,3 +439,17 @@ def get_tag_set_by_func(func):
     for key in tag_set_name_N:
         if tag_set_name_N[key] == func:
             return key
+
+def get_top_statistics(file, top_errors = 10):
+    with open( file, 'r' ) as stat_f:
+        index = 2
+        stats = defaultdict(int)
+        for line_stat in stat_f:
+            index += 1
+
+            if index % 6 == 0:
+                error_str = line_stat.strip()
+                if error_str:
+                    stats[ error_str ] += 1
+        sorted_dict = sorted(stats.items(), key=lambda t: t[1], reverse = True)
+        return [idx for idx in  sorted_dict[:top_errors]]

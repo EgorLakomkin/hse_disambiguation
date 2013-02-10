@@ -9,7 +9,7 @@ import math
 from morphomon.algorithm.hmm_disambig import HMMAlgorithm
 from morphomon.algorithm.mmem_disambig import MMEMAlgorithm
 from morphomon.algorithm.naive import NaiveAlgorithm
-from morphomon.utils import N_rnc_pos, get_corpus_files, get_diff_between_tokens, parse_token, EOS_TOKEN, split_seq, remove_directory_content, flatten, remove_ambiguity_file_list, get_dirs_from_config, tag_set_name_N
+from morphomon.utils import N_rnc_pos, get_corpus_files, get_diff_between_tokens, parse_token, EOS_TOKEN, split_seq, remove_directory_content, flatten, remove_ambiguity_file_list, get_dirs_from_config, tag_set_name_N, get_tag_set_by_func
 
 __author__ = 'egor'
 
@@ -47,7 +47,7 @@ def P_no_garbage(token):
 def prettify_gram(gram):
     return ','.join( [tag for tag in gram.split(',') if len(tag) > 0 ] )
 
-def calculate_precision(file_algo_name, file_gold_standart_name, file_ambi_name, M, N, P, errors_context_filename, errors_statistics_filename):
+def calculate_precision(file_algo_name, file_gold_standart_name, file_ambi_name, M, N, P, errors_context_filename):
     """
     Params :
     file_algo - файл, который получился в результате алгоритма
@@ -58,8 +58,7 @@ def calculate_precision(file_algo_name, file_gold_standart_name, file_ambi_name,
     gold_f = codecs.open( file_gold_standart_name, 'r', 'utf-8' )
     ambi_f = codecs.open( file_ambi_name, 'r', 'utf-8' )
 
-    error_context_f = open( errors_context_filename,'a+' )
-    error_stat_f = open( errors_statistics_filename,'a+' )
+    error_context_f = open( errors_context_filename,'w+' )
 
     correct_known = 0.0
     correct_unknown = 0.0
@@ -119,25 +118,18 @@ def calculate_precision(file_algo_name, file_gold_standart_name, file_ambi_name,
             except StopIteration:
                 continue
 
-
-
-
         if gold_token_record == EOS_TOKEN:
             context.append( (None, None, EOS) )
             continue
 
-
-
         if P(gold_token_record) > 0:
             result_m = M( algo_token_record, gold_token_record)
-
             if result_m < 1.0:
                 context.append( (gold_token_record, algo_token_record, ERROR) )
             else:
                 context.append( (gold_token_record, algo_token_record, OK) )
 
             if 'bastard' in line_ambi:
-
                 correct_unknown += result_m
                 max_value_unknown += 1.0
             else:
@@ -147,7 +139,6 @@ def calculate_precision(file_algo_name, file_gold_standart_name, file_ambi_name,
             diff = get_diff_between_tokens( gold_token_record, algo_token_record )
             for error in diff:
                 errors[ error[0] ] += 1
-
             #считаем верхнюю границу
             results_ambig = sum([  M( ambig_token, gold_token_record) for ambig_token in ambig_token_records ])
             if results_ambig > 0.0:
@@ -155,10 +146,9 @@ def calculate_precision(file_algo_name, file_gold_standart_name, file_ambi_name,
                     upper_bound_unknown += 1.0
                 else:
                     upper_bound_known += 1.0
-
-
         else:
             context.append( (gold_token_record, algo_token_record, OK) )
+
 
     for i,data in enumerate(context):
         gold_token = data[0]
@@ -189,7 +179,6 @@ def calculate_precision(file_algo_name, file_gold_standart_name, file_ambi_name,
             error_context_f.write("\r\n")
     #процессим контексты
     error_context_f.close()
-    error_stat_f.close()
 
     algo_f.close()
     gold_f.close()
@@ -197,7 +186,7 @@ def calculate_precision(file_algo_name, file_gold_standart_name, file_ambi_name,
     return correct_unknown, correct_known, max_value_unknown, max_value_known,errors, upper_bound_unknown, upper_bound_known
 
 
-def calculate_dir_precision(algo_dir, gold_dir, ambi_dir, M , N, P, errors_context_filename, errors_statistics_filename):
+def calculate_dir_precision(algo_dir, gold_dir, ambi_dir, M , N, P, errors_context_filename):
 
     algo_files = get_corpus_files(algo_dir)
 
@@ -218,8 +207,7 @@ def calculate_dir_precision(algo_dir, gold_dir, ambi_dir, M , N, P, errors_conte
         if os.path.exists( algo_file ) and os.path.exists( gold_file ):
             cur_correct_unknown, cur_correct_known, cur_total_unknown, cur_total_known,errors, cur_upper_bound_unknown,cur_upper_bound_known  = calculate_precision( file_algo_name= algo_file, file_gold_standart_name= gold_file,
                 file_ambi_name = ambi_file, M=M , N=N, P=P,
-                errors_context_filename = errors_context_filename,
-                errors_statistics_filename = errors_statistics_filename )
+                errors_context_filename = errors_context_filename)
             total_unknown += cur_total_unknown
             total_known += cur_total_known
             total = total_unknown + total_known
@@ -278,8 +266,7 @@ def cross_validate_inner(i):
     remove_ambiguity_file_list(ambig_filelist=morph_analysis_files, output_dir= algo_dir, algo = algo )
     print "Finished working of algo. Starting measuring phase"
     total_correct_known, total_correct_unknown, total_known, total_unknown, upper_bound_known,upper_bound_unknown  = calculate_dir_precision( algo_dir = algo_dir, ambi_dir= morph_analysis_dir, gold_dir =  corpus_dir, M = M_strict_mathcher, N =  N_func, P = P_no_garbage,
-        errors_context_filename = os.path.join(error_dir, "{1}_errors_context_{0}.txt".format( i , algo_name )),
-        errors_statistics_filename = os.path.join(error_dir, "{1}_errors_statistics_{0}.txt".format( i , algo_name )) )
+        errors_context_filename = os.path.join(error_dir, "{1}_errors_context_{0}_{2}.txt".format( i , algo_name, get_tag_set_by_func( N_func ) ) ) )
 
     return (total_correct_known, total_correct_unknown, total_known, total_unknown, upper_bound_known,upper_bound_unknown )
 
@@ -305,7 +292,7 @@ def cross_validate(num_iters, algo_name, corpus_dir, algo_dir, morph_analysis_di
             s += x
             n += 1.0
         avg = s / n
-        dev = q / n - avg ** 2
+        dev = math.sqrt( q / n - avg ** 2 )
         return avg, dev
 
     prec         = list( (tck + tcu) / (tk + tu) for tck, tcu, tk, tu, _, _ in results )

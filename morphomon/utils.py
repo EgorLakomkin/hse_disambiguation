@@ -435,3 +435,7 @@ tag_set_name_N = {'pos' : N_rnc_pos, 'base_tags' : N_rnc_positional_microsubset,
                   'new_pos' : N_rnc_modified_pos, 'new_base_tags' : N_rnc_modified_positional_microsubset }
 
 
+def get_tag_set_by_func(func):
+    for key in tag_set_name_N:
+        if tag_set_name_N[key] == func:
+            return key

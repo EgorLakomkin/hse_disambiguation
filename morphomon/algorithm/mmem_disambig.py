@@ -51,6 +51,7 @@ class MMEMAlgorithm(object):
             if sentence[k].encode('utf-8') in PREPS:
                 yield "has preposition {0} at {1}".format(sentence[k].encode('utf-8'), k - i)
 
+
         #совпадение по числу.падежу, роду
         if labels:
             for k in xrange( max(0, i -2 ), i ):
@@ -62,13 +63,9 @@ class MMEMAlgorithm(object):
                     yield "has same gender at pos {1}".format(sentence[k].encode('utf-8'), k - i)
 
 
-
     def train_model_file_list(self, corpus_filelist, ambiguity_dir ):
         self.me.begin_add_event()
-        #self.B = train_B_corpus(corpus_dir = corpus_dir,N_filter_func = N_filter_func)
 
-        total = 0
-        skipped = 0
         for corpus_file in corpus_filelist:
             print "Training on file {0}".format( corpus_file )
             sentence = []

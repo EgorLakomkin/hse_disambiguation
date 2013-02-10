@@ -293,7 +293,7 @@ def cross_validate(num_iters, algo_name, corpus_dir, algo_dir, morph_analysis_di
             n += 1.0
         avg = s / n
         dev = math.sqrt( q / n - avg ** 2 )
-        return avg, dev
+        return avg *100 , dev * 100
 
     prec         = list( (tck + tcu) / (tk + tu) for tck, tcu, tk, tu, _, _ in results )
     known_prec   = list( tck / tk                for tck, tcu, tk, tu, _, _ in results )
@@ -308,7 +308,7 @@ def cross_validate(num_iters, algo_name, corpus_dir, algo_dir, morph_analysis_di
     print "RESULT:   upper bound by knowns: {0:.4f}% +- {1:.4f}%".format(*summary(ub_known))
     print "RESULT: upper bound by unknowns: {0:.4f}% +- {1:.4f}%".format(*summary(ub_unknown))
     print "RESULT: " # Just a separator.
-    print "RESULT: Finished {0} algorithm with {1} tagset".format( algo_name, N_func )
+    print "RESULT: Finished {0} algorithm with {1} tagset".format( algo_name, get_tag_set_by_func(N_func ) )
     print "RESULT: Raw: " + repr(results)
 
 if __name__=="__main__":

@@ -319,6 +319,12 @@ def get_tokens_from_directory(corpus_dir, file_pattern = "*.*", N_filter_func = 
         for token in get_tokens_from_file(file,N_filter_func=N_filter_func ):
             yield token
 
+def create_dir(dirname, path=os.getcwd()):
+    dirpath = os.path.join(path, dirname)
+    try:
+        os.mkdir(dirpath)
+    except OSError as error:
+        print error
 
 def dump_object(filename, object):
     file = open(filename,'wb')
@@ -453,3 +459,6 @@ def get_top_statistics(file, top_errors = 10):
                     stats[ error_str ] += 1
         sorted_dict = sorted(stats.items(), key=lambda t: t[1], reverse = True)
         return [idx for idx in  sorted_dict[:top_errors]]
+
+if __name__=="__main__":
+    print get_top_statistics( "/home/egor/dump/baseline_errors_context_0_pos.txt" )

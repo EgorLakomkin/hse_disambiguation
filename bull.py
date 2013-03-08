@@ -2,8 +2,9 @@
 import os
 import sys
 import traceback
+from morphomon.algorithm.mmem_disambig import MMEMAlgorithm
 from morphomon.eval import M_strict_mathcher, P_no_garbage, calculate_dir_precision
-from morphomon.utils import create_dir, load_object, remove_directory_content, remove_ambiguity_file_list, N_rnc_pos
+from morphomon.utils import create_dir, load_object, remove_directory_content, remove_ambiguity_file_list, N_rnc_pos, N_rnc_modified_pos
 
 FOLDS_DIRNAME = 'folds'
 TEST_FILENAME = 'test.txt'
@@ -12,7 +13,10 @@ TEST_DIR = 'test'
 TRAIN_DIR = 'train'
 TRAIN_FILENAME = 'train.txt'
 
-def bull(action, experiment_name, experiment_path, fold, gold = None):
+from maxent import MaxentModel
+
+
+def bull(action, experiment_name, experiment_path, fold, gold = None, morph_analysis = None):
     experiment_dir = os.path.join( experiment_path, experiment_name  )
 
 
@@ -38,7 +42,8 @@ def bull(action, experiment_name, experiment_path, fold, gold = None):
         fold_train_file = os.path.join( fold_dir, TRAIN_FILENAME )
         params['fold'] = fold
         params['train_file_list'] = [os.path.abspath(os.path.join(train_files_source_dir,line.strip())) for line in open(fold_train_file, 'r').readlines()]
-
+        if morph_analysis:
+            params['ambiguity_dir'] = morph_analysis
         mod.runner( **params )
 
     elif action == 'test':
@@ -55,7 +60,9 @@ def bull(action, experiment_name, experiment_path, fold, gold = None):
         model_filename = os.path.abspath(os.path.join(experiment_dir,model_filename))
         if not os.path.exists( model_filename ):
             print >>sys.stderr, "Model has not been trained for experiment {0} for fold {1}".format(experiment_name, fold )
-        hmm_algo = load_object( model_filename )
+
+        hmm_algo = MMEMAlgorithm(N_filter_func=N_rnc_modified_pos)
+        hmm_algo.load_model( model_filename )
         remove_directory_content( result_dir )
         remove_ambiguity_file_list( ambig_filelist = test_files, output_dir=result_dir, algo=hmm_algo)
         print "Finished removing ambiguity for experiment {0} for fold {1}".format(experiment_name, fold )
@@ -82,6 +89,7 @@ if __name__ == "__main__":
     parser.add_argument('-p', '--experiment_path', help="Path to the experiment")
     parser.add_argument('-f', '--fold', help="fold number")
     parser.add_argument('-g', '--gold', help="gold directory")
+    parser.add_argument('-m', '--ambiguity_dir', help="morph analysis output directory")
 
 
     args = parser.parse_args()
@@ -105,5 +113,5 @@ if __name__ == "__main__":
         exit()
 
     bull(action=args.action, experiment_name=args.experiment_name,
-         experiment_path=args.experiment_path, fold = args.fold, gold = args.gold)
+         experiment_path=args.experiment_path, fold = args.fold, gold = args.gold, morph_analysis = args.ambiguity_dir)
 

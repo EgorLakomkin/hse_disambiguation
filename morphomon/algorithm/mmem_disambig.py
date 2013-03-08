@@ -22,7 +22,7 @@ class MMEMAlgorithm(object):
     def __init__(self, N_filter_func = N_default):
         self.filter_func = N_filter_func
         self.me = MaxentModel()
-        self.num_train_iters = 500
+        self.num_train_iters = 2000
 
     def load_memm_model(self, filename):
         self.me.load( filename  )
@@ -49,7 +49,7 @@ class MMEMAlgorithm(object):
         n = len( sentence )
         for k in xrange(max(0, i - 2), min(n, i + 3)):
             if sentence[k].encode('utf-8') in PREPS:
-                yield "has preposition {0} at {1}".format(sentence[k].encode('utf-8'), k - i)
+                yield "has preposition {0} at {1}".format(sentence[k].encode('utf-8'), k)
 
 
         #совпадение по числу.падежу, роду
@@ -171,8 +171,10 @@ class MMEMAlgorithm(object):
         self.me.train( 50, 'lbfgs', 0.0 )
         maxent.set_verbose(0)
 
+    def load_model(self, memm_filename):
+        self.me.load( memm_filename )
 
-    def save_model(self, memm_filename, B_stat_filename):
+    def save_model(self, memm_filename):
         self.me.save( memm_filename )
         #dump_object( B_stat_filename, self.B )
 

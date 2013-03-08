@@ -276,7 +276,7 @@ def parse_token(line, N_filter_func=N_default):
         equal_idx = lemma.find('=')
         cur_lemma = lemma[:equal_idx]
         gram = N_filter_func(lemma[equal_idx + 1:])
-        x = TokenRecord(word = wf, lemma = cur_lemma, gram = gram )
+        x = TokenRecord(word = wf.lower(), lemma = cur_lemma.lower(), gram = gram.lower() )
         tokens.add(x)
 
     return list(tokens)

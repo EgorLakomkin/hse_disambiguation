@@ -33,17 +33,21 @@ def bull(action, experiment_name, experiment_path, fold, gold = None, morph_anal
 
     params = {
         'action' : action,
-        'experiment_dir' : experiment_dir
+        'experiment_name' : experiment_name,
+        'experiment_dir' : experiment_dir,
+        'fold' : fold
     }
     if action == 'train':
         fold_dir = os.path.join(experiment_dir, FOLDS_DIRNAME, fold )
 
         train_files_source_dir = os.path.join(experiment_dir, TRAIN_DIR)
         fold_train_file = os.path.join( fold_dir, TRAIN_FILENAME )
-        params['fold'] = fold
+
         params['train_file_list'] = [os.path.abspath(os.path.join(train_files_source_dir,line.strip())) for line in open(fold_train_file, 'r').readlines()]
         if morph_analysis:
             params['ambiguity_dir'] = morph_analysis
+
+        params['action'] = 'train'
         mod.runner( **params )
 
     elif action == 'test':
@@ -56,15 +60,11 @@ def bull(action, experiment_name, experiment_path, fold, gold = None, morph_anal
         result_dir =  os.path.join( fold_dir, 'test_result' )
         create_dir( result_dir )
 
-        model_filename = 'model_{0}.dat'.format( fold )
-        model_filename = os.path.abspath(os.path.join(experiment_dir,model_filename))
-        if not os.path.exists( model_filename ):
-            print >>sys.stderr, "Model has not been trained for experiment {0} for fold {1}".format(experiment_name, fold )
 
-        hmm_algo = MMEMAlgorithm(N_filter_func=N_rnc_modified_pos)
-        hmm_algo.load_model( model_filename )
+        params['action'] = 'load_model'
+        algo = mod.runner( **params )
         remove_directory_content( result_dir )
-        remove_ambiguity_file_list( ambig_filelist = test_files, output_dir=result_dir, algo=hmm_algo)
+        remove_ambiguity_file_list( ambig_filelist = test_files, output_dir=result_dir, algo=algo)
         print "Finished removing ambiguity for experiment {0} for fold {1}".format(experiment_name, fold )
     elif action == 'eval':
         #результат работы алгоритма в конкретном фолде

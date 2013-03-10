@@ -56,11 +56,11 @@ class MMEMAlgorithm(object):
         if labels:
             for k in xrange( max(0, i -2 ), i ):
                 if get_gender( labels[k] ) == get_gender( labels[i] ) and get_gender( labels[i] ):
-                    yield "has same gender at pos {1}".format(sentence[k].encode('utf-8'), k - i)
+                    yield "has same gender at pos {0}".format( k - i)
                 if get_case( labels[k] ) == get_case( labels[i] ) and get_case( labels[i] ):
-                    yield "has same case at pos {1}".format(sentence[k].encode('utf-8'), k - i)
+                    yield "has same case at pos {0}".format( k - i)
                 if get_number( labels[k] ) == get_number( labels[i] ) and get_number( labels[i] ):
-                    yield "has same gender at pos {1}".format(sentence[k].encode('utf-8'), k - i)
+                    yield "has same number at pos {0}".format( k - i)
 
 
     def train_model_file_list(self, corpus_filelist, ambiguity_dir ):

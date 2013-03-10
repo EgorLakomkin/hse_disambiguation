@@ -68,16 +68,10 @@ def bull(action, experiment_name, experiment_path, fold, gold = None, morph_anal
         print "Finished removing ambiguity for experiment {0} for fold {1}".format(experiment_name, fold )
     elif action == 'eval':
         #результат работы алгоритма в конкретном фолде
-        fold_dir = os.path.join(experiment_dir, FOLDS_DIRNAME, fold )
-
-        errors_filename =  os.path.join( fold_dir, 'errors.txt' )
-
-        algo_dir = os.path.join( fold_dir, 'test_result' )
-
-        test_files_source_dir = os.path.join(experiment_dir, TEST_DIR)
-
-        calculate_dir_precision( algo_dir = algo_dir, gold_dir = gold,ambi_dir=test_files_source_dir, M=M_strict_mathcher,
-        N=N_rnc_pos, P = P_no_garbage, errors_context_filename=errors_filename)
+        params['action'] = 'eval'
+        params['gold'] = gold
+        params['ambiguity_dir'] = morph_analysis
+        precision = mod.runner( **params )
 
 
 

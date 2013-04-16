@@ -10,14 +10,8 @@ from maxent import MaxentModel
 
 __author__ = 'egor'
 
-PREPS = ['за','путём','вво','позади','со','близ','от','после','включая','ввиду','помимо','из-за','против','до','наперекор','для','насчёт',
-         'перд','ко','кончая','вслед','возле','вне','вопреки','перед','передо','над','посреди','наподобие','а-ля','внутри','благодаря','кроме',
-         'изо','вследствие','без','через','вдоль','спустя','безо','среди','вместо','прежде','по','при','о','у','вблизи','обо','к','подобно',
-         'во','про','вроде','из','касательно','меж','проо','ради','на','из-под','под','относительно','сверху','мимо','посредством','согласно',
-         'вокруг','между','ото','накануне','сквозь','в','об','около','сверх','с','минус','средь']
 
 def default_compute_features( sentence , i, prev_label, analysises, labels):
-
         if prev_label is not None:
             yield "previous-tag={0}".format(   prev_label )
 
@@ -25,28 +19,6 @@ def default_compute_features( sentence , i, prev_label, analysises, labels):
         word_ending = get_word_ending( word_form, ending_length= 3 )
         yield "word-ending={0}".format( word_ending.encode('utf-8') )
 
-        if analysises is not None:
-            for analysis in analysises:
-                yield "has_analysis={0}".format( analysis )
-
-        if len(sentence[i]) <= 3:
-            yield "is={0}".format(sentence[i].encode('utf-8'))
-
-        n = len( sentence )
-        for k in xrange(max(0, i - 2), min(n, i + 3)):
-            if sentence[k].encode('utf-8') in PREPS:
-                yield "has preposition {0} at {1}".format(sentence[k].encode('utf-8'), k)
-
-
-        #совпадение по числу.падежу, роду
-        if labels:
-            for k in xrange( max(0, i -2 ), i ):
-                if get_gender( labels[k] ) == get_gender( labels[i] ) and get_gender( labels[i] ):
-                    yield "has same gender at pos {0}".format( k - i)
-                if get_case( labels[k] ) == get_case( labels[i] ) and get_case( labels[i] ):
-                    yield "has same case at pos {0}".format( k - i)
-                if get_number( labels[k] ) == get_number( labels[i] ) and get_number( labels[i] ):
-                    yield "has same number at pos {0}".format( k - i)
 
 class MMEMAlgorithm(object):
 

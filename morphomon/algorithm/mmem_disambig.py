@@ -16,21 +16,7 @@ PREPS = ['за','путём','вво','позади','со','близ','от','�
          'во','про','вроде','из','касательно','меж','проо','ради','на','из-под','под','относительно','сверху','мимо','посредством','согласно',
          'вокруг','между','ото','накануне','сквозь','в','об','около','сверх','с','минус','средь']
 
-class MMEMAlgorithm(object):
-
-    #реализация алгоритма на основе HMM
-    def __init__(self, N_filter_func = N_default):
-        self.filter_func = N_filter_func
-        self.me = MaxentModel()
-        self.num_train_iters = 2000
-
-    def load_memm_model(self, filename):
-        self.me.load( filename  )
-
-    def init(self):
-        pass
-
-    def compute_features( self, sentence , i, prev_label, analysises, labels):
+def default_compute_features( sentence , i, prev_label, analysises, labels):
 
         if prev_label is not None:
             yield "previous-tag={0}".format(   prev_label )
@@ -61,6 +47,23 @@ class MMEMAlgorithm(object):
                     yield "has same case at pos {0}".format( k - i)
                 if get_number( labels[k] ) == get_number( labels[i] ) and get_number( labels[i] ):
                     yield "has same number at pos {0}".format( k - i)
+
+class MMEMAlgorithm(object):
+
+    #реализация алгоритма на основе HMM
+    def __init__(self,compute_features = default_compute_features, N_filter_func = N_default):
+        self.filter_func = N_filter_func
+        self.me = MaxentModel()
+        self.num_train_iters = 2000
+	self.compute_features = compute_features
+
+    def load_memm_model(self, filename):
+        self.me.load( filename  )
+
+    def init(self):
+        pass
+
+    
 
 
     def train_model_file_list(self, corpus_filelist, ambiguity_dir ):

@@ -6,14 +6,11 @@ from morphomon.eval import M_strict_mathcher, P_no_garbage, calculate_dir_precis
 from morphomon.utils import N_rnc_modified_positional_microsubset, N_rnc_pos
 
 
-def runner( **kwarg):
+def runner(action=None, fold=None, experiment_name=None,experiment_dir=None, **kwarg):
+
     """
     Example of runner for training MEMM new pos
     """
-    action = kwarg['action']
-    experiment_dir = kwarg['experiment_dir']
-    fold = kwarg['fold']
-    experiment_name = kwarg['experiment_name']
     model_filename =  os.path.abspath(os.path.join(experiment_dir,'folds',str(fold),  'model_{0}.dat'.format( fold )))
 
     if action == "train":
@@ -41,13 +38,4 @@ def runner( **kwarg):
         print "Loaded MEMM model from file {0}".format( model_filename )
         return memm_algo
     elif action == "eval":
-        print "Eval model results for experiment {0} fold {1}".format( experiment_name, fold )
-        gold_dir = kwarg['gold']
-        fold_dir = os.path.join(experiment_dir, 'folds', fold )
-
-        errors_filename =  os.path.join( fold_dir, 'errors.txt' )
-        ambiguity_dir = kwarg['ambiguity_dir']
-        algo_dir = os.path.join( fold_dir, 'test_result' )
-
-        return calculate_dir_precision( algo_dir = algo_dir, gold_dir = gold_dir,ambi_dir=ambiguity_dir, M=M_strict_mathcher,
-        N=N_rnc_modified_positional_microsubset, P = P_no_garbage, errors_context_filename=errors_filename)
+	return {'M' : M_strict_mathcher,'N' : N_rnc_pos, 'P' : P_no_garbage}

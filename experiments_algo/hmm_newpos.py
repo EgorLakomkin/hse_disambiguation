@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 import os
 import sys
-from morphomon.algorithm.mmem_disambig import MMEMAlgorithm
-from morphomon.utils import dump_object, N_rnc_pos, load_object, remove_directory_content, remove_ambiguity_file_list, N_rnc_modified_pos
+from morphomon.algorithm.hmm_disambig import HMMAlgorithm
 from morphomon.eval import M_strict_mathcher, P_no_garbage, calculate_dir_precision
+from morphomon.utils import N_rnc_modified_pos, dump_object, load_object
 
 
 def runner( **kwarg):
@@ -20,26 +20,22 @@ def runner( **kwarg):
         print "Train experiment {0}".format(experiment_name)
         #обучаем модель для конкретного фолда
         train_file_list = kwarg['train_file_list']
-        memm_algo = MMEMAlgorithm( N_filter_func = N_rnc_modified_pos)
-        ambiguity_dir = None
-        if 'ambiguity_dir' in kwarg:
-            ambiguity_dir = kwarg['ambiguity_dir']
+        hmm_algo = HMMAlgorithm( N_filter_func = N_rnc_modified_pos)
 
 
-        memm_algo.train_model_file_list(corpus_filelist = train_file_list, ambiguity_dir=ambiguity_dir)
-        memm_algo.save_model( model_filename )
+        hmm_algo.train_model_from_filelist(corpus_files = train_file_list)
+        dump_object(filename =  model_filename, object=  hmm_algo)
         print "MEMM model has been trained and saved to file {0}".format(model_filename)
-    if action == "load_model":
+    elif action == "load_model":
         print "Load model {0}".format(experiment_name)
 
         model_filename = os.path.abspath(os.path.join(experiment_dir,model_filename))
         if not os.path.exists( model_filename ):
             print >>sys.stderr, "Model has not been trained for experiment {0} for fold {1}".format(experiment_name, fold )
             exit(-1)
-        memm_algo = MMEMAlgorithm( N_filter_func = N_rnc_modified_pos)
-        memm_algo.load_model( model_filename )
-        print "Loaded MEMM model from file {0}".format( model_filename )
-        return memm_algo
+        hmm_algo = load_object( model_filename )
+        print "Loaded HMM model from file {0}".format( model_filename )
+        return hmm_algo
     elif action == "eval":
         print "Eval model results for experiment {0} fold {1}".format( experiment_name, fold )
         gold_dir = kwarg['gold']
@@ -50,4 +46,4 @@ def runner( **kwarg):
         algo_dir = os.path.join( fold_dir, 'test_result' )
 
         return calculate_dir_precision( algo_dir = algo_dir, gold_dir = gold_dir,ambi_dir=ambiguity_dir, M=M_strict_mathcher,
-        N=N_rnc_pos, P = P_no_garbage, errors_context_filename=errors_filename)
+        N=N_rnc_modified_pos, P = P_no_garbage, errors_context_filename=errors_filename)

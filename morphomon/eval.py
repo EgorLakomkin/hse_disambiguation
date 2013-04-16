@@ -9,12 +9,12 @@ import math
 from morphomon.algorithm.hmm_disambig import HMMAlgorithm
 from morphomon.algorithm.mmem_disambig import MMEMAlgorithm
 from morphomon.algorithm.naive import NaiveAlgorithm
-from morphomon.utils import N_rnc_pos, get_corpus_files, get_diff_between_tokens, parse_token, EOS_TOKEN, split_seq, remove_directory_content, flatten, remove_ambiguity_file_list, get_dirs_from_config, tag_set_name_N, get_tag_set_by_func
+from morphomon.utils import N_rnc_pos, get_corpus_files, get_diff_between_tokens, parse_token, EOS_TOKEN, split_seq, remove_directory_content, flatten, remove_ambiguity_file_list, get_dirs_from_config, tag_set_name_N, get_tag_set_by_func, N_default
 
 __author__ = 'egor'
 
 
-garbage_tags = [ 'init', 'abbr', 'ciph', 'nonlex' ]
+garbage_tags = [ 'init', 'abbr', 'ciph', 'nonlex', 'persn', 'patrn', 'famn', 'zoon' ]
 
 class ALGONAMES:
     BASELINE = 'baseline'
@@ -79,7 +79,7 @@ def calculate_precision(file_algo_name, file_gold_standart_name, file_ambi_name,
         line_gold = line_gold.strip()
 
 
-
+        gold_token_raw = parse_token( line_gold, N_filter_func=N_default)[0]
         gold_token_record = parse_token( line_gold, N_filter_func=N)[0]
         algo_token_record = parse_token( line_algo, N_filter_func=N)[0]
         ambig_token_records = parse_token( line_ambi, N_filter_func=N)
@@ -122,7 +122,7 @@ def calculate_precision(file_algo_name, file_gold_standart_name, file_ambi_name,
             context.append( (None, None, EOS) )
             continue
 
-        if P(gold_token_record) > 0:
+        if P(gold_token_raw) > 0:
             result_m = M( algo_token_record, gold_token_record)
             if result_m < 1.0:
                 context.append( (gold_token_record, algo_token_record, ERROR) )

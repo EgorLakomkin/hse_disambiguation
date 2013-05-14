@@ -272,8 +272,11 @@ def parse_token(line, N_filter_func=N_default):
     tab_split = line.split('\t')
     wf = tab_split[0]
     lemmas = tab_split[1:]
+
     for lemma in lemmas:
         equal_idx = lemma.find('=')
+        if equal_idx == -1:
+            continue
         cur_lemma = lemma[:equal_idx]
         gram = N_filter_func(lemma[equal_idx + 1:])
         x = TokenRecord(word = wf.lower(), lemma = cur_lemma.lower(), gram = gram.lower() )

@@ -23,7 +23,7 @@ def default_compute_features( sentence , i, prev_label, analysises, labels):
 class MMEMAlgorithm(object):
 
     #реализация алгоритма на основе HMM
-    def __init__(self,compute_features = default_compute_features, N_filter_func = N_default):
+    def __init__(self,compute_features, N_filter_func = N_default):
         self.filter_func = N_filter_func
         self.me = MaxentModel()
         self.num_train_iters = 2000
@@ -181,7 +181,6 @@ class MMEMAlgorithm(object):
         """
         words = [variant[0]  for variant in variants]
         analysises = [[token.gram for token in variant[1]]  for variant in variants ]
-
         viterbi_layers = [ None for i in xrange(len(words)) ]
 
         viterbi_backpointers = [ None for i in xrange(len(words) + 1) ]
@@ -205,6 +204,7 @@ class MMEMAlgorithm(object):
                 features = list(features)
                 distribution =  self.me.eval_all(features)
                 distribution = dict( (label, prob) for label, prob in  distribution if label in analysises[i])
+
                 distribution_sum = sum( [v for v in distribution.values() ]  )
                 distribution = dict( (k, v/ distribution_sum) for k, v in distribution.items() )
                 for label, prob in distribution.items():

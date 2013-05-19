@@ -58,7 +58,7 @@ def calculate_precision(file_algo_name, file_gold_standart_name, file_ambi_name,
     gold_f = codecs.open( file_gold_standart_name, 'r', 'utf-8' )
     ambi_f = codecs.open( file_ambi_name, 'r', 'utf-8' )
 
-    error_context_f = open( errors_context_filename,'w+' )
+    error_context_f = open( errors_context_filename,'a' )
 
     correct_known = 0.0
     correct_unknown = 0.0
